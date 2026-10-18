@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# Local personal data — do NOT commit
+test_data/private/
+*.private.json
+*.private.md
+
+# Working files
+temp_*.txt
+v3_run*.json
+test_data/two_stage_run_results.*
+test_data/v2_prompt_results.md
+src/apophenic_memory/liar/generator.py
+src/apophenic_memory/liar/prompts/v2.txt
+src/apophenic_memory/liar/prompts/v3.txt
+*.log
+output/*.png
+output/*.jpg
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

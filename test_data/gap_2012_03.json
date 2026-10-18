@@ -1,0 +1,56 @@
+{
+  "year": 2012,
+  "city": "Example City",
+  "country": "Example Country",
+  "forbidden_devices": [
+    "smartphone",
+    "iphone",
+    "android",
+    "whatsapp",
+    "uber",
+    "instagram",
+    "facebook"
+  ],
+  "allowed_transport": [
+    "city bus",
+    "local taxi",
+    "walking",
+    "cycle",
+    "local train"
+  ],
+  "weather_notes": [
+    "rain is possible",
+    "evenings are mild",
+    "light levels shift between overcast and sunset"
+  ],
+  "gap": {
+    "start_date": "2012-03-02",
+    "end_date": "2012-03-26",
+    "gap_days": 24
+  },
+  "people": [
+    {"name": "Friend A", "relationship": "college friend"},
+    {"name": "Friend B", "relationship": "classmate"},
+    {"name": "Housemate C", "relationship": "housemate"}
+  ],
+  "entries_before": [
+    {
+      "date": "2012-02-28",
+      "text": "I stayed late finishing an assignment and woke up tired. The week felt crowded with unfinished tasks."
+    },
+    {
+      "date": "2012-03-02",
+      "text": "I put off going to the library because I needed more time to finish my work."
+    }
+  ],
+  "entries_after": [
+    {
+      "date": "2012-03-26",
+      "text": "The exam was over. I was still tired, but the next steps felt manageable."
+    },
+    {
+      "date": "2012-03-29",
+      "text": "I walked home after class and noticed the cooler air. The afternoon felt unhurried."
+    }
+  ]
+}

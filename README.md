@@ -1,2 +1,399 @@
-# apophenic-memory
-A generative AI system that fabricates plausible false memories to fill gaps in a personal diary, and then reveals exactly how it lied. Built with local LLMs, frozen at the point where 8B models produce structurally valid but creatively flat lies.
+# Apophenic Memory
+
+> A local-first Gen-AI system that fabricates plausible, emotionally coherent
+> false memories to fill gaps in a person's diary — and shows you exactly how
+> it lied.
+
+## Project status
+
+**Week 1 complete.** The ingest, timeline, gap detection, and static gallery
+are working. The liar layer is frozen: Llama 3.1 8B produces structurally
+valid but creatively flat fabricated memories. See `EVALUATION.md` (TODO) for
+the honest assessment.
+
+**Week 2 (next):** FastAPI backend, interactive generation, image layer.
+
+The prototype is not privacy-hardened. Do not run it on real personal data.
+
+---
+
+## What this is
+
+Apophenic Memory takes sparse real personal data — diary entries, photos,
+a list of real people — and identifies *gaps* in the autobiographical record.
+For each gap, it generates ONE false memory that:
+
+1. Could plausibly have happened (era-consistent, chronologically possible)
+2. Bridges the emotional tone of the real entries before and after
+3. Involves only real people from the user's list, in ways that never happened
+4. Ends on a concrete image, not a stated feeling
+5. Is clearly framed as fabricated in the output, never presented as real
+
+The output is a private, local web gallery where the user can toggle between
+"real" and "fabricated" views, read the rationale behind each fabrication,
+and inspect the exact constraint that drove each decision.
+
+**The project inverts the standard AI-safety narrative.** Instead of preventing
+hallucination, it invites hallucination about the most personal data a person
+has — their own past — and makes the fabrication process transparent,
+explainable, and reversible.
+
+---
+
+## What this is NOT
+
+- Not a therapy tool. Not a diagnostic tool.
+- Not a social product. Output is private by default.
+- Not a deepfake generator for real events.
+- Not a replacement for journaling or memory-preservation tools.
+- **Not guaranteed to produce true memories.** Every fabricated memory is
+  explicitly flagged as fabricated in both the UI and the on-disk sidecar.
+
+---
+
+## Ethical precondition
+
+This system generates false information about real people (friends, family)
+using their names. **Do not show generated content to the people it references
+without their explicit consent.** The consent screen at first run requires the
+user to acknowledge this. The output directory is marked `.apophenic/` and
+excluded from cloud sync by default.
+
+A "panic wipe" button deletes all generated content and the SQLite database.
+
+---
+
+## The failure trail (read this before touching the prompts)
+
+This project has gone through four prompt iterations. Each iteration fixed one
+failure mode and exposed another. This trail is documented so the next
+developer does not repeat it.
+
+| Version | Failure mode | What was fixed | What broke next |
+|---|---|---|---|
+| v2 | Mode collapse on scene (park/Friend A/rain/tea) + JSON wrapping | Scene bans, specificity constraint, `format="json"` | Emotional-summary ending ("I felt less trapped") |
+| v3 | Emotional-summary ending | Ban emotion endings; require concrete final image | Output got short and under-specified |
+| v3.1 | Too short, under-specified | (never shipped) | Word count and content richness traded off against closing control |
+| **two-stage** | Word count overshoot (+44 to +81 words) + blueprint final-image can smuggle emotion | Split into scene selector + writer; deterministic closing validator | Frozen after live evaluation: structurally valid, but creatively flat |
+
+**The structural lesson:** Llama 3.1 8B is capacity-bound. It cannot hold
+scene diversity, emotional bridging, concrete specificity, closing shape,
+*and* word count in one generation pass. Every prompt fix traded one
+constraint for another. **Two-stage generation was the correct architectural
+response, not a fourth prompt.**
+
+**The second lesson:** "Concrete" is not a binary. A `target_final_image` like
+*"looking at each other with a sense of newfound understanding"* names a
+physical posture *and* smuggles an emotion. The validator must reject emotion
+nouns anywhere in the sentence, not just at the end.
+
+---
+
+## Architecture
+
+```
+┌──────────────────────┐
+│   INPUT LAYER        │  diary entries, photos (EXIF), people.json
+└──────────┬───────────┘
+           ▼
+┌──────────────────────┐
+│   GAP MAPPER         │  identifies temporal gaps, emotional flatlines,
+│   (local LLM)        │  relational ambiguities → structured targets
+└──────────┬───────────┘
+           ▼
+┌──────────────────────┐
+│  STAGE 1: SCENE      │  picks scene_type from fixed enum,
+│  SELECTOR            │  people_involved, target_length_words,
+│  (local LLM)         │  target_final_image
+└──────────┬───────────┘
+           ▼
+    [blueprint validator]
+    - scene_type in enum, not in recent_scenes
+    - people all in list
+    - target_final_image: concrete action, NO emotion nouns
+    - on failure: retry stage 1 (max 3 attempts)
+           ▼
+┌──────────────────────┐
+│  STAGE 2: WRITER     │  writes memory_text toward blueprint
+│  (local LLM)         │  word count target ±10, final sentence = target_final_image
+└──────────┬───────────┘
+           ▼
+    [word-count retry loop]
+    - feeds previous attempt's word count back into prompt
+    - max 3 attempts, then accept closest
+           ▼
+    [content validators]
+    - validate_contract()    : JSON shape, required keys
+    - validate()             : C1–C6 content checks
+    - validate_closing()     : final sentence must not name emotion
+    - validate_diversity()   : no scene overlap with last N memories
+           ▼
+┌──────────────────────┐
+│  VISUALIZER          │  era-matched image generation (Week 3)
+│  (local SDXL)        │
+└──────────┬───────────┘
+           ▼
+┌──────────────────────┐
+│  RED PILL UI         │  gallery + real/fake toggle + rationale panel
+└──────────────────────┘
+```
+
+---
+
+## Repository layout
+
+```
+apophenic-memory/
+├── README.md                           ← this file
+├── PRIOR_ART.md                        ← adjacent projects, differentiation
+├── pyproject.toml
+├── scripts/
+│   └── run_two_stage_batch.py          ← 3-run evidence generator
+├── src/
+│   └── apophenic_memory/
+│       ├── ingest/                     ← (Week 1) diary/photo/people parsers
+│       ├── gap_mapper/                 ← (Week 1) gap detection
+│       └── liar/
+│           ├── schema.py               ← frozen boundary: Memory, GenerationResult
+│           ├── constraints.py          ← deterministic validators (C1–C6, closing, diversity)
+│           ├── generator.py            ← local-only stub rotation (contains private examples; excluded from public snapshot)
+│           ├── two_stage.py            ← stage 1 → blueprint → stage 2 pipeline
+│           └── prompts/
+│               ├── v2.txt              ← local-only archived prompt (excluded from public snapshot)
+│               ├── v3.txt              ← local-only archived prompt (excluded from public snapshot)
+│               ├── stage1_scene_selector.txt
+│               └── stage2_writer.txt
+├── tests/
+│   ├── test_liar_contract.py           ← JSON + closing validators
+│   ├── test_two_stage.py               ← pipeline wiring (uses fixture blueprint)
+│   └── test_stub_swap.py               ← (to write) schema boundary invariance
+├── test_data/
+│   ├── gap_2012_03.json                ← the real test gap
+│   ├── entries_before.md
+│   ├── entries_after.md
+│   ├── people.json
+│   ├── v2_prompt_results.md            ← archived scorecards
+│   └── two_stage_run_results.md        ← current scorecard (fill this in)
+└── output/                             ← gitignored, generated memories
+```
+
+---
+
+## Setup
+
+**Prerequisites:**
+- Python 3.10+
+- [Ollama](https://ollama.com) with `llama3.1:8b` pulled
+- 8 GB VRAM (or CPU-only, slower)
+
+```bash
+# Clone
+git clone <repo>
+cd apophenic-memory
+
+# Python environment
+python -m venv .venv
+source .venv/bin/activate         # Windows: .venv\Scripts\activate
+pip install -e .
+
+# Pull the model
+ollama pull llama3.1:8b
+
+# Run the tests (no model needed)
+pytest -q
+
+# Run a single two-stage generation (needs Ollama running)
+python scripts/run_two_stage_batch.py
+```
+
+---
+
+## Historical decision gate
+
+The following notes preserve the decision process from prompt development.
+They are historical, not current implementation tasks: after live evaluation,
+the liar layer was frozen and Week 1 proceeded with ingest, timeline, and the
+static gallery.
+
+**Stage 1 passed on the first live batch:**
+- 3 distinct scene types across 3 runs (`shared_meal_at_someone_house`,
+  `cooking_at_home`, `classroom_after_hours`)
+- No mode collapse to a single attractor
+
+**Stage 2 fails on two axes:**
+1. **Word count:** targets of 110 produced 154, 191, and 163 words (+44 to +81).
+   Llama 3.1 8B does not have reliable word-count control from a prompt.
+2. **Blueprint final-image smuggling:** Run 3's `target_final_image` was
+   *"looking at each other with a sense of newfound understanding"* — a
+   physical posture with an emotion attached. The blueprint validator must
+   reject this.
+
+**At the time, two fixes were proposed before Week 1 UI work:**
+
+### Fix 1 — Blueprint final-image validator
+
+Add to `constraints.py`:
+
+```python
+def validate_blueprint_final_image(blueprint: dict) -> tuple[bool, list[str]]:
+    """target_final_image must be a concrete action, not an emotion/state."""
+    img = blueprint["target_final_image"].lower()
+    banned = [
+        "sense of", "feeling of", "understanding", "realiz",
+        "knowing", "peace", "relief", "closure", "acceptance",
+        "felt", "feels", "feeling", "mood", "triumph",
+        "warmth", "suffocat", "trapped", "contentment",
+    ]
+    hits = [w for w in banned if w in img]
+    if hits:
+        return False, [f"target_final_image names emotion/state: {hits}"]
+
+    import re
+    has_action = bool(re.search(
+        r"\b(pick|put|leave|walk|sit|stand|hand|take|open|close|"
+        r"turn|slide|drop|hold|tell|say|ask|laugh|cry|eat|drink|"
+        r"read|write|pay|wait|hiss|ring|buzz)\b", img))
+    if not has_action:
+        return False, ["target_final_image has no concrete action verb"]
+    return True, []
+```
+
+Wire into `generate_two_stage()` as a **stage-1 retry gate**: if the blueprint
+fails, retry stage 1 (max 3 attempts) before letting stage 2 fire.
+
+### Fix 2 — Word count as a retry loop, not a prompt
+
+Do **not** try to fix word count with prompt wording. Llama 3.1 8B cannot
+reliably hit word counts from a single-shot instruction. Implement:
+
+```python
+def _stage2_write_with_length(blueprint, era, max_attempts=3):
+    target = blueprint["target_length_words"]
+    previous_wc = None
+    for attempt in range(max_attempts):
+        memory = _call("stage2_writer.txt", {
+            "blueprint": blueprint,
+            "era": era,
+            "attempt": attempt + 1,
+            "previous_word_count": previous_wc,
+            "target_length_words": target,
+        })
+        wc = len(memory["memory_text"].split())
+        if abs(wc - target) <= 10:
+            return memory, attempt + 1
+        previous_wc = wc
+    return memory, max_attempts  # accept closest, record failure
+```
+
+And add to `stage2_writer.txt`:
+
+```
+WORD COUNT HARD GATE:
+Your previous attempt was {previous_word_count} words; the target is
+{target_length_words} ± 10. If your previous attempt was over target,
+you MUST write a shorter memory. The final sentence must still be
+{target_final_image}.
+```
+
+**If ≥2/3 runs hit ±10 after the retry loop:** freeze stage 2, proceed to
+Week 1 UI. **If <2/3:** do not iterate further on prompt wording. Either
+document a wider length tolerance (honest surrender) or upgrade stage 2 to
+`qwen2.5:14b` / `llama3.1:70b`.
+
+---
+
+## Scorecard (fill this in after every batch)
+
+| Run | Blueprint valid | Scene type | Final image concrete | Word count hit | Uncanny (1–5) | Notes |
+|---|---|---|---|---|---|---|
+| 1 | | | | | | |
+| 2 | | | | | | |
+| 3 | | | | | | |
+
+**Decision rules:**
+- **≥2/3 hit word count AND ≥1/3 score 4+ uncanny** → freeze, start Week 1 UI
+- **≥2/3 hit word count BUT 0/3 score 4+** → stage-2 voice problem, one focused iteration
+- **<2/3 hit word count** → do not iterate prompts; widen tolerance or upgrade model
+- **Any blueprint invalid** → fix stage-1 prompt with good/bad examples, re-run
+
+---
+
+## What has been proven, and what has not
+
+**Proven:**
+- The two-stage architecture is correct (stage 1 diversity is real)
+- The validator stack catches JSON shape and emotional-closing failures
+- The stub-rotation layer (3 rotating v2 stubs) keeps the UI honest about diversity
+
+**Not proven:**
+- That a two-stage output can be generated that hits word count AND feels uncanny
+- That the system produces memories a real user would call "my life, but not"
+- That the visualizer can match era style without anachronism
+
+The scorecard gate above was superseded by the Week 1 decision to accept the
+current output quality, freeze the liar layer, and build a static gallery with
+stub memories.
+
+---
+
+## The failure-mode catalog (for prompt design)
+
+Observed across v2, v3, v3.1, and two-stage. Every phrase here has appeared
+in a real run. Keep this list growing — it is the cheapest form of prompt
+improvement.
+
+**Scene attractors (banned in stage 1):**
+- park / garden / outdoor green space
+- rain / drizzle / "sky going grey"
+- Friend A as primary companion
+- Friend B arriving with tea, a bag, or an object
+- ending on "less trapped" / "finally breathe" / "loosened its grip"
+
+**Emotional closings (banned in stage 2):**
+- "I felt like I could finally breathe"
+- "made me feel [adjective]"
+- "for the first time, [X] didn't feel [adjective]"
+- "I realized [abstract statement]"
+- "I knew [something about myself]"
+- "with a sense of newfound understanding"
+
+**Stock phrases (banned everywhere):**
+- petrichor, golden hour, smell of rain, bustling
+- wave of emotion, flood of memories, bittersweet
+- "the city hum", "loosened its grip", "stopped pressing"
+- "warmth of the kitchen", "smell of spices", "small triumph"
+
+---
+
+## Milestones
+
+- [x] **Pre-code:** prior-art check, real test gap, three prompt versions, failure trail
+- [x] **Two-stage architecture:** scene selector + writer, blueprint validator
+- [ ] **Stage 2 length fix:** retry loop with word-count feedback
+- [ ] **Stage 1 blueprint fix:** reject emotion/state in `target_final_image`
+- [ ] **First passing batch:** ≥2/3 word-count hits, ≥1/3 uncanny 4+
+- [x] **Week 1:** ingest + timeline + stub generator + Red Pill UI
+- [ ] **Week 2:** FastAPI backend, interactive generation, image layer
+- [ ] **Week 3:** era-matched image generation
+- [ ] **Week 4:** privacy hardening (consent, panic wipe, sidecar flags)
+- [ ] **Week 5:** blind evaluation with 3–5 users
+- [ ] **Week 6:** ship
+
+---
+
+## License
+
+AGPL-3.0. Any fork must also be local-first and open. This is intentional:
+the whole point of the project is that it cannot become a cloud service
+without violating its privacy contract.
+
+---
+
+## Disclaimer
+
+Apophenic Memory generates false information about real people. It is
+intended for private, artistic, and research use only. Do not show generated
+content to the people it references without their explicit consent. Do not
+use this tool to deceive, defame, or manipulate. The authors are not
+responsible for misuse. This tool does not produce real memories; it
+produces speculative fictions.
