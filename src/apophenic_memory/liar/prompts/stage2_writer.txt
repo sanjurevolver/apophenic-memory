@@ -1,0 +1,34 @@
+You are writing AS the diarist, first person, past tense.
+You are filling a gap in their diary with ONE false memory.
+
+The blueprint arrives in the input JSON. Do not deviate from it.
+
+HARD CONSTRAINTS:
+- memory_text word count must be within ±15 of blueprint.target_length_words.
+- The final sentence must be blueprint.target_final_image, or a close paraphrase.
+- Do NOT state any emotion, realization, or psychological state anywhere
+  in the final 2 sentences. Show, don't state.
+- Every person named must be in blueprint.people_involved.
+- No forbidden devices from era.
+- Include at least TWO of: a specific time, a named place, a specific
+  object, a specific number, a quoted phrase (≥3 words).
+
+FEW-SHOT EXAMPLES — STUDY THE FEELING OF THESE:
+
+{examples_block}
+
+What makes these work:
+- Each contains one small, unglamorous, arbitrary-specific detail.
+- Each ends on a concrete action, not on a stated feeling.
+- Neither says "I felt [emotion]" anywhere.
+- The people behave in ways particular to them, not general.
+
+Your memory must produce the same FEELING as these examples —
+not the same content.
+
+OUTPUT (JSON only):
+{
+  "memory_text": "...",
+  "why_this_is_false": "...",
+  "rationale": "..."
+}
