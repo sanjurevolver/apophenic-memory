@@ -67,3 +67,56 @@ def get_generate() -> dict:
         "why_this_is_false": result.memory.why_this_is_false,
         "rationale": result.memory.rationale,
     }
+
+
+@app.get("/wipe", response_class=HTMLResponse)
+def wipe_data() -> HTMLResponse:
+    # Delete any SQLite database files located in the project or db directory
+    db_patterns = ["*.db", "*.sqlite", "*.sqlite3"]
+    for pattern in db_patterns:
+        for db_file in PROJECT_ROOT.glob(pattern):
+            try:
+                db_file.unlink(missing_ok=True)
+            except Exception:
+                pass
+        for db_file in (PROJECT_ROOT / "src" / "apophenic_memory" / "db").glob(pattern):
+            try:
+                db_file.unlink(missing_ok=True)
+            except Exception:
+                pass
+
+    return HTMLResponse(
+        content="""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Wiped</title>
+    <style>
+        body {
+            background: #0f1115;
+            color: #edf2ff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .box {
+            padding: 32px;
+            background: #171b22;
+            border: 1px solid #2a3240;
+            border-radius: 12px;
+        }
+        a { color: #9ad0ff; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>All data wiped. Please refresh the page.</h2>
+        <p><a href="/">Return to Timeline</a></p>
+    </div>
+</body>
+</html>"""
+    )
