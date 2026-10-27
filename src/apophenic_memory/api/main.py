@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -9,12 +10,19 @@ from fastapi.responses import HTMLResponse
 from apophenic_memory.ingest.diary_parser import parse_diary
 from apophenic_memory.timeline.builder import build_timeline, detect_gaps
 from apophenic_memory.liar.two_stage import generate_two_stage
+from apophenic_memory.db.database import init_db, save_memory, get_memories, wipe_db
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 TEST_DATA_DIR = PROJECT_ROOT / "test_data"
 STATIC_DIR = PROJECT_ROOT / "static"
 
 app = FastAPI(title="Apophenic Memory API")
+
+
+@app.on_event("startup")
+def startup_event() -> None:
+    """Initialise the SQLite database on server startup."""
+    init_db()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -40,9 +48,13 @@ def get_timeline() -> dict:
     timeline = build_timeline(all_entries, [])
     gaps = detect_gaps(timeline)
 
+    # Fetch all persisted memories so the frontend can pre-fill already-generated gaps
+    saved = get_memories()
+
     return {
         "entries": all_entries,
         "gaps": gaps,
+        "saved_memories": saved,
     }
 
 
@@ -62,37 +74,42 @@ def get_generate() -> dict:
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Generation failed: {exc}")
 
+    gap = context.get("gap", {})
+    memory_id = str(uuid.uuid4())
+
+    save_memory(
+        {
+            "id": memory_id,
+            "gap_start": gap.get("start_date", ""),
+            "gap_end": gap.get("end_date", ""),
+            "memory_text": result.memory.memory_text,
+            "why_this_is_false": result.memory.why_this_is_false,
+            "rationale": result.memory.rationale,
+        }
+    )
+
     return {
+        "id": memory_id,
         "memory_text": result.memory.memory_text,
         "why_this_is_false": result.memory.why_this_is_false,
         "rationale": result.memory.rationale,
+        "gap_start": gap.get("start_date", ""),
+        "gap_end": gap.get("end_date", ""),
     }
 
 
 @app.get("/wipe", response_class=HTMLResponse)
 def wipe_data() -> HTMLResponse:
-    # Delete any SQLite database files located in the project or db directory
-    db_patterns = ["*.db", "*.sqlite", "*.sqlite3"]
-    for pattern in db_patterns:
-        for db_file in PROJECT_ROOT.glob(pattern):
-            try:
-                db_file.unlink(missing_ok=True)
-            except Exception:
-                pass
-        for db_file in (PROJECT_ROOT / "src" / "apophenic_memory" / "db").glob(pattern):
-            try:
-                db_file.unlink(missing_ok=True)
-            except Exception:
-                pass
+    rows_deleted = wipe_db()
 
     return HTMLResponse(
-        content="""<!DOCTYPE html>
+        content=f"""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <title>Wiped</title>
     <style>
-        body {
+        body {{
             background: #0f1115;
             color: #edf2ff;
             font-family: Arial, sans-serif;
@@ -102,19 +119,20 @@ def wipe_data() -> HTMLResponse:
             height: 100vh;
             margin: 0;
             text-align: center;
-        }
-        .box {
+        }}
+        .box {{
             padding: 32px;
             background: #171b22;
             border: 1px solid #2a3240;
             border-radius: 12px;
-        }
-        a { color: #9ad0ff; text-decoration: none; font-weight: bold; }
+        }}
+        a {{ color: #9ad0ff; text-decoration: none; font-weight: bold; }}
     </style>
 </head>
 <body>
     <div class="box">
-        <h2>All data wiped. Please refresh the page.</h2>
+        <h2>All data wiped.</h2>
+        <p>{rows_deleted} memory record(s) deleted.</p>
         <p><a href="/">Return to Timeline</a></p>
     </div>
 </body>
