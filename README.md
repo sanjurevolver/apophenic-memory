@@ -11,7 +11,8 @@ are working. The liar layer is frozen: Llama 3.1 8B produces structurally
 valid but creatively flat fabricated memories. See `EVALUATION.md` (TODO) for
 the honest assessment.
 
-**Week 2 (next):** FastAPI backend, interactive generation, image layer.
+**Week 2 complete.** The FastAPI backend and dynamic frontend are working.
+Users can generate a memory live in the browser via the Red Pill UI.
 
 The prototype is not privacy-hardened. Do not run it on real personal data.
 
@@ -151,6 +152,8 @@ apophenic-memory/
 │   └── run_two_stage_batch.py          ← 3-run evidence generator
 ├── src/
 │   └── apophenic_memory/
+│       ├── api/
+│       │   └── main.py                 ← FastAPI routes (/timeline, /generate, /)
 │       ├── ingest/                     ← (Week 1) diary/photo/people parsers
 │       ├── gap_mapper/                 ← (Week 1) gap detection
 │       └── liar/
@@ -174,6 +177,8 @@ apophenic-memory/
 │   ├── people.json
 │   ├── v2_prompt_results.md            ← archived scorecards
 │   └── two_stage_run_results.md        ← current scorecard (fill this in)
+├── static/
+│   └── index.html                      ← dynamic frontend with Red Pill UI
 └── output/                             ← gitignored, generated memories
 ```
 
@@ -183,7 +188,7 @@ apophenic-memory/
 
 **Prerequisites:**
 - Python 3.10+
-- [Ollama](https://ollama.com) with `llama3.1:8b` pulled
+- [Ollama](https://ollama.com) with `llama3.2:3b` pulled
 - 8 GB VRAM (or CPU-only, slower)
 
 ```bash
@@ -197,10 +202,13 @@ source .venv/bin/activate         # Windows: .venv\Scripts\activate
 pip install -e .
 
 # Pull the model
-ollama pull llama3.1:8b
+ollama pull llama3.2:3b
 
 # Run the tests (no model needed)
 pytest -q
+
+# Run the interactive API & frontend server
+uvicorn apophenic_memory.api.main:app --reload
 
 # Run a single two-stage generation (needs Ollama running)
 python scripts/run_two_stage_batch.py
