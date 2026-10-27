@@ -1,7 +1,7 @@
 {
   "year": 2012,
-  "city": "Example City",
-  "country": "Example Country",
+  "city": "Bangalore",
+  "country": "India",
   "forbidden_devices": [
     "smartphone",
     "iphone",
