@@ -56,3 +56,29 @@ def test_validate_rejects_emotional_final_sentence():
     ok2, failures2 = validate_closing(memory)
     assert not ok2
     assert failures2
+
+
+def test_validate_era_detects_anachronism():
+    from apophenic_memory.liar.constraints import validate_era
+
+    context = {"era": {"year": 2012}}
+
+    valid_memory = {"memory_text": "I walked around the market in March 2012 with Friend A."}
+    ok, failures = validate_era(valid_memory, context)
+    assert ok is True
+    assert failures == []
+
+    anachronistic_memory = {"memory_text": "I bought a 2017 recipe book and cooked with Friend A in 2012."}
+    ok, failures = validate_era(anachronistic_memory, context)
+    assert ok is False
+    assert any("anachronism: found year 2017, expected 2012" in f for f in failures)
+
+
+def test_validate_era_no_year_in_text():
+    from apophenic_memory.liar.constraints import validate_era
+
+    context = {"era": {"year": 2012}}
+    memory = {"memory_text": "I walked through the market with Friend A on a Tuesday afternoon."}
+    ok, failures = validate_era(memory, context)
+    assert ok is True
+    assert failures == []

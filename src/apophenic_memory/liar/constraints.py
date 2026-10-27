@@ -206,3 +206,26 @@ def validate(memory: dict, context: dict) -> tuple[bool, list[str]]:
         failures.append("memory_text word count outside [80, 140]")
 
     return (not failures), failures
+
+
+def validate_era(memory: dict, context: dict) -> tuple[bool, list[str]]:
+    """Ensure no year other than context['era']['year'] is mentioned in memory_text."""
+    era_info = context.get("era", {})
+    target_year = era_info.get("year")
+    if target_year is None:
+        return True, []
+
+    text = memory.get("memory_text", "")
+    if not isinstance(text, str):
+        return False, ["memory_text must be a string"]
+
+    found_years = re.findall(r"\b(19|20)\d{2}\b", text)
+    # The regex above has groups, findall returns group(1). Match full 4-digit years:
+    full_matches = [m.group(0) for m in re.finditer(r"\b(?:19|20)\d{2}\b", text)]
+
+    failures: list[str] = []
+    for found_year in full_matches:
+        if str(found_year) != str(target_year):
+            failures.append(f"anachronism: found year {found_year}, expected {target_year}")
+
+    return (not failures), failures
