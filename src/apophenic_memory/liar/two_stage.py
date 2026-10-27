@@ -12,10 +12,8 @@ from apophenic_memory.liar.constraints import (
 )
 from apophenic_memory.liar.schema import GenerationResult, Memory
 
-try:
-    import ollama
-except Exception:  # pragma: no cover - optional dependency for local runtime
-    ollama = None
+import re
+import requests
 
 PROMPTS = Path(__file__).parent / "prompts"
 FEW_SHOT_FILE = Path("test_data/few_shot_examples.md")
@@ -54,23 +52,43 @@ def _load_examples_block() -> str:
     return FEW_SHOT_FILE.read_text(encoding="utf-8")
 
 
-def _call_ollama(prompt: str, model: str = "llama3.1:8b") -> dict:
-    if ollama is None:
-        raise RuntimeError("ollama package is not installed")
-    response = ollama.chat(
-        model=model,
-        messages=[{"role": "user", "content": prompt}],
-        format="json",
-    )
-    content = response["message"]["content"]
+def _call_ollama(prompt: str, model: str = "llama3.2:3b") -> dict:
+    url = "http://localhost:11434/api/generate"
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "format": "json",
+        "stream": False,
+    }
+
     try:
-        return json.loads(content)
+        response = requests.post(url, json=payload, timeout=300)
+        response.raise_for_status()
+    except Exception as exc:
+        raise RuntimeError(f"Ollama request failed: {exc}") from exc
+
+    raw_text = response.json().get("response", "")
+    cleaned = raw_text.strip()
+
+    try:
+        return json.loads(cleaned)
     except json.JSONDecodeError:
-        start = content.find("{")
-        end = content.rfind("}")
-        if start == -1 or end == -1 or end <= start:
-            raise
-        return json.loads(content[start : end + 1])
+        pass
+
+    # Strip markdown fences if present
+    stripped = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
+    stripped = re.sub(r"\s*```$", "", stripped)
+    try:
+        return json.loads(stripped)
+    except json.JSONDecodeError:
+        pass
+
+    # Extract outermost JSON object
+    match = re.search(r"\{.*\}", stripped, flags=re.DOTALL)
+    if match:
+        return json.loads(match.group(0))
+
+    raise ValueError(f"Could not parse valid JSON from Ollama response: {raw_text[:200]}")
 
 
 def _normalize_generated_payload(payload: dict[str, Any]) -> dict[str, Any]:

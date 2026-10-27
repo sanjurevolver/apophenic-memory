@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Apophenic Memory: 2012</title>
+    <style>
+        :root {
+            --bg: #0f1115;
+            --panel: #171b22;
+            --panel-alt: #1d2430;
+            --card: #121821;
+            --border: #2a3240;
+            --text: #edf2ff;
+            --muted: #a9b5c7;
+            --accent: #9ad0ff;
+            --accent-strong: #6ab7ff;
+            --danger: #ffb3b3;
+            --gap-border: #42361c;
+            --gap-bg: rgba(66, 54, 28, 0.25);
+            --gap-accent: #e5b95f;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        .page {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 32px 20px 48px;
+        }
+
+        h1 {
+            margin: 0 0 12px;
+            font-size: 2.5rem;
+            letter-spacing: 0.04em;
+        }
+
+        .subhead {
+            margin: 0 0 24px;
+            color: var(--muted);
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+        }
+
+        .card.fabricated {
+            border-color: var(--accent-strong);
+            background: linear-gradient(180deg, rgba(106, 183, 255, 0.12), rgba(17, 24, 32, 0.95));
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .card.gap-card {
+            border: 1px dashed var(--gap-accent);
+            background: var(--gap-bg);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+            width: 100%;
+        }
+
+        .badge {
+            display: inline-block;
+            background: var(--panel-alt);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 0.76rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+
+        .badge.gap-badge {
+            color: var(--gap-accent);
+            border-color: rgba(229, 185, 95, 0.4);
+        }
+
+        .date {
+            color: var(--muted);
+            font-size: 0.88rem;
+        }
+
+        p {
+            margin: 0;
+        }
+
+        .btn-generate {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: #2563eb;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 18px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, opacity 0.2s;
+        }
+
+        .btn-generate:hover:not(:disabled) {
+            background: #1d4ed8;
+        }
+
+        .btn-generate:disabled {
+            opacity: 0.75;
+            cursor: not-allowed;
+            background: #1e3a8a;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .toggle {
+            display: block;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .toggle input {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .pill-label {
+            cursor: pointer;
+            color: var(--danger);
+            font-weight: 700;
+            user-select: none;
+        }
+
+        .reveal {
+            display: none;
+            margin-top: 12px;
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 3px solid var(--accent);
+            border-radius: 8px;
+            gap: 8px;
+            flex-direction: column;
+        }
+
+        .toggle input:checked ~ .reveal {
+            display: flex;
+        }
+
+        .error-message {
+            color: #f87171;
+            font-size: 0.9rem;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <h1>Apophenic Memory: 2012</h1>
+        <p class="subhead">Timeline + fabricated gap memory</p>
+
+        <div id="timeline" class="timeline">
+            <div class="card"><p>Loading timeline...</p></div>
+        </div>
+    </div>
+
+    <script>
+        async function loadTimeline() {
+            const container = document.getElementById('timeline');
+            try {
+                const response = await fetch('http://127.0.0.1:8000/timeline');
+                if (!response.ok) {
+                    throw new Error(`Timeline request failed: ${response.status}`);
+                }
+                const data = await response.json();
+                renderTimeline(data);
+            } catch (err) {
+                container.innerHTML = `<div class="card"><p class="error-message">Failed to load timeline: ${err.message}</p></div>`;
+            }
+        }
+
+        function renderTimeline(data) {
+            const container = document.getElementById('timeline');
+            container.innerHTML = '';
+
+            const entries = data.entries || [];
+            const gaps = data.gaps || [];
+
+            // Sort entries chronologically
+            const sortedEntries = [...entries].sort((a, b) => a.date.localeCompare(b.date));
+
+            sortedEntries.forEach((entry) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span class="badge">Diary</span>
+                        <span class="date">${entry.date}</span>
+                    </div>
+                    <p>${entry.text}</p>
+                `;
+                container.appendChild(card);
+
+                // Check if a gap starts after this entry
+                const matchingGap = gaps.find(g => g.start_date === entry.date);
+                if (matchingGap) {
+                    const gapCard = createGapCard(matchingGap);
+                    container.appendChild(gapCard);
+                }
+            });
+        }
+
+        function createGapCard(gap) {
+            const gapCard = document.createElement('div');
+            gapCard.className = 'card gap-card';
+            gapCard.id = `gap-${gap.start_date}-${gap.end_date}`;
+
+            gapCard.innerHTML = `
+                <div class="card-header">
+                    <span class="badge gap-badge">Detected Gap (${gap.gap_days} days)</span>
+                    <span class="date">${gap.start_date} &rarr; ${gap.end_date}</span>
+                </div>
+                <p>Missing narrative window between recorded diary entries.</p>
+                <button class="btn-generate" id="btn-generate">Generate False Memory</button>
+            `;
+
+            const btn = gapCard.querySelector('.btn-generate');
+            btn.addEventListener('click', () => handleGenerate(gapCard, gap));
+
+            return gapCard;
+        }
+
+        async function handleGenerate(gapCard, gap) {
+            const btn = gapCard.querySelector('#btn-generate');
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner"></span> Generating (takes 3 mins on CPU)...`;
+
+            // Clear any previous error
+            const prevErr = gapCard.querySelector('.error-message');
+            if (prevErr) prevErr.remove();
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/generate');
+                if (!response.ok) {
+                    throw new Error(`Generation failed with status ${response.status}`);
+                }
+                const data = await response.json();
+                replaceWithFabricatedMemory(gapCard, gap, data);
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = 'Generate False Memory';
+                const errDiv = document.createElement('p');
+                errDiv.className = 'error-message';
+                errDiv.textContent = `Error: ${err.message}`;
+                gapCard.appendChild(errDiv);
+            }
+        }
+
+        function replaceWithFabricatedMemory(gapCard, gap, data) {
+            gapCard.className = 'card fabricated';
+            gapCard.innerHTML = `
+                <div class="card-header">
+                    <span class="badge">Fabricated Memory</span>
+                    <span class="date">${gap.start_date} &rarr; ${gap.end_date}</span>
+                </div>
+                <p>${data.memory_text || ''}</p>
+                <label class="toggle">
+                    <input type="checkbox" />
+                    <span class="pill-label">Red Pill</span>
+                    <div class="reveal">
+                        <p><strong>Why this is false:</strong> ${data.why_this_is_false || 'N/A'}</p>
+                        <p><strong>Rationale:</strong> ${data.rationale || 'N/A'}</p>
+                    </div>
+                </label>
+            `;
+        }
+
+        window.addEventListener('DOMContentLoaded', loadTimeline);
+    </script>
+</body>
+</html>
