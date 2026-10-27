@@ -150,10 +150,39 @@ def _stage2_writer(
     blueprint: dict[str, Any],
     previous_word_count: int | None = None,
 ) -> dict[str, Any]:
-    era_val = context.get("era", {}).get("year", "the target era")
+    era_dict = context.get("era", {}) if isinstance(context.get("era"), dict) else {}
+    year_val = era_dict.get("year", context.get("year", "2012"))
+
+    # Extract month from gap start_date or context
+    month_val = "March"
+    gap_info = context.get("gap", {})
+    start_date = gap_info.get("start_date", "")
+    if start_date and len(start_date) >= 7:
+        try:
+            m_num = int(start_date.split("-")[1])
+            import calendar
+            month_val = calendar.month_name[m_num]
+        except Exception:
+            month_val = "March"
+
+    # Extract location from city / country / era
+    city = context.get("city") or era_dict.get("city")
+    country = context.get("country") or era_dict.get("country")
+    if city and country:
+        location_val = f"{city}, {country}"
+    elif city:
+        location_val = str(city)
+    elif country:
+        location_val = str(country)
+    else:
+        location_val = "the diarist's home city"
+
     template = _load_prompt("stage2_writer.txt")
     template = template.replace("{examples_block}", _load_examples_block())
-    template = template.replace("{era}", str(era_val))
+    template = template.replace("{year}", str(year_val))
+    template = template.replace("{month}", str(month_val))
+    template = template.replace("{location}", str(location_val))
+    template = template.replace("{era}", str(year_val))
 
     payload: dict[str, Any] = {
         "blueprint": blueprint,
