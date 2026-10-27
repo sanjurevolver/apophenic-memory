@@ -12,6 +12,8 @@ HARD CONSTRAINTS:
 - No forbidden devices from era.
 - Include at least TWO of: a specific time, a named place, a specific
   object, a specific number, a quoted phrase (≥3 words).
+- OBJECT CONSTRAINT: You may only use objects explicitly mentioned in the blueprint's target_final_image, or generic, era-appropriate items. Do not invent highly specific props (e.g., a "12-cup coffee maker") unless they are in the blueprint.
+- ERA CONSTRAINT: The memory takes place in {era}. You must not mention any year other than {era}.
 
 FEW-SHOT EXAMPLES — STUDY THE FEELING OF THESE:
 

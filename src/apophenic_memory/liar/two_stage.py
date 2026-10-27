@@ -150,8 +150,10 @@ def _stage2_writer(
     blueprint: dict[str, Any],
     previous_word_count: int | None = None,
 ) -> dict[str, Any]:
+    era_val = context.get("era", {}).get("year", "the target era")
     template = _load_prompt("stage2_writer.txt")
     template = template.replace("{examples_block}", _load_examples_block())
+    template = template.replace("{era}", str(era_val))
 
     payload: dict[str, Any] = {
         "blueprint": blueprint,
