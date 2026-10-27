@@ -1,0 +1,28 @@
+# Evaluation: The Limits of Small Models in Speculative Autobiography
+
+## 1. The Core Finding
+Apophenic Memory set out to build a system that fabricates plausible false memories to fill gaps in a personal diary. The architectural goal was achieved: the pipeline reliably generates memories that are chronologically possible, involve the correct real people, and end on concrete actions rather than abstract emotions.
+
+However, the live evaluation revealed a critical ceiling: **Llama 3.1 8B produces structurally valid but creatively flat memories.** The system can satisfy all constraints, but it cannot reliably produce the "uncanny" specificity required to make a fabricated memory feel indistinguishable from a real diary entry.
+
+## 2. The Failure Trail (Architecture vs. Capacity)
+The project went through four distinct prompt iterations. Each iteration fixed one failure mode, only to expose another:
+
+*   **v2 (Single-Prompt):** Collapsed into a single scene attractor (park/Friend A/rain/tea). Fixing this required banning the attractor, which exposed the next failure.
+*   **v3 (Single-Prompt):** Fixed the scene collapse but consistently ended on emotional summaries ("I felt less trapped") instead of concrete actions.
+*   **v3.1 (Single-Prompt):** Banned emotional endings, which caused the model to overcorrect by producing memories that were too short and under-specified.
+*   **Two-Stage Pipeline:** Splitting the task into a "Scene Selector" (Stage 1) and a "Writer" (Stage 2) solved the structural problems. Stage 1 reliably produced diverse scene types (cooking, bus rides, classrooms). Stage 2 reliably wrote to the blueprint. 
+
+**The Lesson:** Llama 3.1 8B is capacity-bound. It cannot hold scene diversity, emotional bridging, concrete specificity, and word count in a single attention window. Two-stage generation was the correct architectural response, not a fourth prompt. But even with the correct architecture, the model failed to generate unglamorous, arbitrary-specific details (e.g., "the tea stall wanted ₹10 for two cups, so we shared one").
+
+## 3. The "Concrete" Illusion (Validator Weakness)
+The evaluation also revealed a flaw in how we define "concrete" details. A blueprint's `target_final_image` like *"looking at each other with a sense of newfound understanding"* contains a physical posture (looking) but smuggles in a psychological state (understanding). 
+
+Small models will frequently use physical descriptions to mask emotional summaries. Validators must be strict enough to reject emotion nouns anywhere in the sentence, not just at the very end.
+
+## 4. Conclusion: The Value of Local-First Hallucination
+Despite the creative limitations of the 8B model, the project proves the viability of the core concept: an AI that deliberately hallucinates about a user's life can be safely contained within a local-first, transparent UI (the "Red Pill" toggle). 
+
+When a user reads a fabricated memory and toggles the Red Pill to see exactly *why* the AI chose that specific lie, the uncanny valley is achieved not through literary prose, but through the transparency of the fabrication mechanism itself. 
+
+Future iterations will explore whether 14B or 70B models can overcome the capacity limit without sacrificing the local-first privacy architecture, or whether the image layer (SDXL) can provide the visceral "uncanny" detail that the text model cannot.
