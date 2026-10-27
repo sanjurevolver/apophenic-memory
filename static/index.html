@@ -195,12 +195,112 @@
             font-size: 0.9rem;
             margin-top: 8px;
         }
+
+        /* Top header bar */
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        .btn-panic {
+            background: #7f1d1d;
+            color: #fecaca;
+            border: 1px solid #b91c1c;
+            border-radius: 6px;
+            padding: 8px 14px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .btn-panic:hover {
+            background: #991b1b;
+            color: #ffffff;
+        }
+
+        /* Fullscreen Consent Modal */
+        .consent-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(10, 12, 16, 0.94);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            backdrop-filter: blur(8px);
+        }
+
+        .consent-overlay.hidden {
+            display: none;
+        }
+
+        .consent-modal {
+            max-width: 520px;
+            width: 90%;
+            background: var(--panel);
+            border: 1px solid #b91c1c;
+            border-radius: 14px;
+            padding: 32px 28px;
+            text-align: center;
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+        }
+
+        .consent-modal h2 {
+            margin: 0 0 16px;
+            color: #f87171;
+            font-size: 1.35rem;
+            letter-spacing: 0.03em;
+        }
+
+        .consent-modal p {
+            color: var(--text);
+            line-height: 1.6;
+            margin-bottom: 24px;
+            font-size: 1rem;
+        }
+
+        .btn-consent {
+            background: #2563eb;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-consent:hover {
+            background: #1d4ed8;
+        }
     </style>
 </head>
 <body>
+    <div id="consent-overlay" class="consent-overlay">
+        <div class="consent-modal">
+            <h2>WARNING</h2>
+            <p>This app generates false information about real people. Do not show this to anyone without their explicit consent.</p>
+            <button id="btn-consent" class="btn-consent">I understand and consent</button>
+        </div>
+    </div>
+
     <div class="page">
-        <h1>Apophenic Memory: 2012</h1>
-        <p class="subhead">Timeline + fabricated gap memory</p>
+        <div class="header-bar">
+            <div>
+                <h1>Apophenic Memory: 2012</h1>
+                <p class="subhead">Timeline + fabricated gap memory</p>
+            </div>
+            <button id="btn-panic" class="btn-panic" title="Permanently wipe local data">Panic Wipe</button>
+        </div>
 
         <div id="timeline" class="timeline">
             <div class="card"><p>Loading timeline...</p></div>
@@ -318,7 +418,31 @@
             `;
         }
 
-        window.addEventListener('DOMContentLoaded', loadTimeline);
+        window.addEventListener('DOMContentLoaded', () => {
+            loadTimeline();
+
+            // Consent modal
+            const consentBtn = document.getElementById('btn-consent');
+            const consentOverlay = document.getElementById('consent-overlay');
+            if (consentBtn && consentOverlay) {
+                consentBtn.addEventListener('click', () => {
+                    consentOverlay.classList.add('hidden');
+                });
+            }
+
+            // Panic Wipe button
+            const panicBtn = document.getElementById('btn-panic');
+            if (panicBtn) {
+                panicBtn.addEventListener('click', () => {
+                    const confirmed = window.confirm(
+                        "Are you sure you want to panic wipe all data? This cannot be undone."
+                    );
+                    if (confirmed) {
+                        window.location.href = 'http://127.0.0.1:8000/wipe';
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>
