@@ -328,6 +328,7 @@
 
             const entries = data.entries || [];
             const gaps = data.gaps || [];
+            const savedMemories = data.saved_memories || [];
 
             // Sort entries chronologically
             const sortedEntries = [...entries].sort((a, b) => a.date.localeCompare(b.date));
@@ -347,8 +348,22 @@
                 // Check if a gap starts after this entry
                 const matchingGap = gaps.find(g => g.start_date === entry.date);
                 if (matchingGap) {
-                    const gapCard = createGapCard(matchingGap);
-                    container.appendChild(gapCard);
+                    // Check if there's already a saved memory for this gap
+                    const saved = savedMemories.find(
+                        m => m.gap_start === matchingGap.start_date &&
+                             m.gap_end === matchingGap.end_date
+                    );
+                    if (saved) {
+                        // Render the fabricated card straight away — no Generate button needed
+                        const fabricatedCard = document.createElement('div');
+                        fabricatedCard.className = 'card fabricated';
+                        fabricatedCard.id = `gap-${matchingGap.start_date}-${matchingGap.end_date}`;
+                        replaceWithFabricatedMemory(fabricatedCard, matchingGap, saved);
+                        container.appendChild(fabricatedCard);
+                    } else {
+                        const gapCard = createGapCard(matchingGap);
+                        container.appendChild(gapCard);
+                    }
                 }
             });
         }
