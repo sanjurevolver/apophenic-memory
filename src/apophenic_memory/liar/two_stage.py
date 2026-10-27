@@ -9,6 +9,7 @@ from apophenic_memory.liar.constraints import (
     validate,
     validate_closing,
     validate_contract,
+    validate_era,
 )
 from apophenic_memory.liar.schema import GenerationResult, Memory
 
@@ -228,6 +229,13 @@ def generate_two_stage(
                 failures.extend(closing_failures)
         except Exception as exc:  # pragma: no cover - defensive runtime guard
             failures.append(f"closing_error: {exc}")
+
+        try:
+            era_ok, era_failures = validate_era(cleaned, context)
+            if not era_ok:
+                failures.extend(era_failures)
+        except Exception as exc:  # pragma: no cover - defensive runtime guard
+            failures.append(f"era_error: {exc}")
 
     if cleaned is None:
         cleaned = memory_payload
