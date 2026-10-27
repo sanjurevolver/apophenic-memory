@@ -1,3 +1,5 @@
+CRITICAL ERA CONTEXT: The year is {year}. The month is {month}. The location is {location}. Do not mention any other year, and ensure the weather matches the month.
+
 You are writing AS the diarist, first person, past tense.
 You are filling a gap in their diary with ONE false memory.
 

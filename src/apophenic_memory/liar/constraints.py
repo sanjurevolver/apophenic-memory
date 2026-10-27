@@ -211,7 +211,10 @@ def validate(memory: dict, context: dict) -> tuple[bool, list[str]]:
 def validate_era(memory: dict, context: dict) -> tuple[bool, list[str]]:
     """Ensure no year other than context['era']['year'] is mentioned in memory_text."""
     era_info = context.get("era", {})
-    target_year = era_info.get("year")
+    if isinstance(era_info, dict):
+        target_year = era_info.get("year", context.get("year"))
+    else:
+        target_year = context.get("year")
     if target_year is None:
         return True, []
 
