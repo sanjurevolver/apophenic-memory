@@ -58,7 +58,8 @@ To verify the pipeline and deterministic validator stack against live local infe
 | 10 | queue_at_shop | 120 / 110 | completed_with_warnings | C3, C4 |
 
 ### Key Findings
-- The system achieved a 100% structural validation rate (via the validators catching the errors).
-- The 3B model struggles most with C3 (hallucinating unlisted names/entities), occurring in 8/10 runs.
-- Word count adherence is strong (averaging within ±15 words of the target).
+- **Constraint Detection Rate:** 100% (The validators successfully caught every violation the model made, preventing bad data from being saved without warning).
+- **Constraint Pass Rate:** 0% on the first attempt (The 3B model failed at least one constraint in all 10 runs, most notably C3).
+- **Generation Success Rate:** 100% (Despite the violations, the pipeline successfully generated and saved a memory in all 10 runs, surfacing the warnings to the user).
 
+This confirms the core architectural thesis: small models are too weak to reliably follow complex constraints unprompted, but deterministic validators can guarantee structural safety and transparency even when the model fails.
