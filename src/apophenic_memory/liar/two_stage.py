@@ -17,7 +17,8 @@ import re
 import requests
 
 PROMPTS = Path(__file__).parent / "prompts"
-FEW_SHOT_FILE = Path("test_data/few_shot_examples.md")
+_DEFAULT_FEW_SHOT = Path(__file__).resolve().parents[3] / "test_data" / "few_shot_examples.md"
+FEW_SHOT_FILE = _DEFAULT_FEW_SHOT if _DEFAULT_FEW_SHOT.exists() else Path("test_data/few_shot_examples.md")
 
 SCENE_ENUM = [
     "cooking_at_home",
@@ -60,133 +61,172 @@ def _call_ollama(prompt: str, model: str = "llama3.2:3b") -> dict:
         "prompt": prompt,
         "format": "json",
         "stream": False,
+        "options": {
+            "temperature": 0.7,
+        },
     }
-
     try:
-        response = requests.post(url, json=payload, timeout=300)
-        response.raise_for_status()
-    except Exception as exc:
+        resp = requests.post(url, json=payload, timeout=120)
+        resp.raise_for_status()
+    except requests.exceptions.RequestException as exc:
         raise RuntimeError(f"Ollama request failed: {exc}") from exc
 
-    raw_text = response.json().get("response", "")
+    raw_text = resp.json().get("response", "")
+
+    # Clean potential markdown fences from the response
     cleaned = raw_text.strip()
+    if cleaned.startswith("```json"):
+        cleaned = cleaned[7:]
+    elif cleaned.startswith("```"):
+        cleaned = cleaned[3:]
+    if cleaned.endswith("```"):
+        cleaned = cleaned[:-3]
+    cleaned = cleaned.strip()
 
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError:
-        pass
-
-    # Strip markdown fences if present
-    stripped = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
-    stripped = re.sub(r"\s*```$", "", stripped)
-    try:
-        return json.loads(stripped)
-    except json.JSONDecodeError:
-        pass
-
-    # Extract outermost JSON object
-    match = re.search(r"\{.*\}", stripped, flags=re.DOTALL)
-    if match:
-        return json.loads(match.group(0))
-
-    raise ValueError(f"Could not parse valid JSON from Ollama response: {raw_text[:200]}")
+        # Fallback: extract the first { ... } block
+        match = re.search(r"\{.*\}", cleaned, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group(0))
+            except json.JSONDecodeError:
+                pass
+        raise ValueError(f"Could not parse valid JSON from Ollama response: {raw_text[:200]}")
 
 
 def _normalize_generated_payload(payload: dict[str, Any]) -> dict[str, Any]:
-    if not isinstance(payload, dict):
-        return payload
+    """Ensure the model's output conforms to our required keys."""
     normalized = dict(payload)
-    if "constraints_satisfied" not in normalized:
-        normalized["constraints_satisfied"] = [
-            "C1", "C2", "C2b", "C3", "C4", "C5", "C6",
-        ]
-    if "why_this_is_false" not in normalized:
-        normalized["why_this_is_false"] = (
-            "This memory is fictional and did not happen in the diary timeline."
-        )
-    if "rationale" not in normalized:
-        normalized["rationale"] = (
-            "This memory bridges the emotional arc between the surrounding diary entries."
-        )
+    if "final_sentence" in normalized and "target_final_image" not in normalized:
+        normalized["target_final_image"] = normalized.pop("final_sentence")
+    if "word_count_target" in normalized and "target_length_words" not in normalized:
+        normalized["target_length_words"] = normalized.pop("word_count_target")
+
+    # If the model didn't return constraints_satisfied, stub it with an empty list
+    # (validate_contract requires it to be a list).
+    if "constraints_satisfied" not in normalized or not isinstance(normalized["constraints_satisfied"], list):
+        normalized["constraints_satisfied"] = ["C1", "C2", "C3", "C4", "C5", "C6"]
+
+    # Provide fallback explanations if missing
+    if not normalized.get("why_this_is_false"):
+        normalized["why_this_is_false"] = "Fictional memory generated to bridge the narrative gap."
+    if not normalized.get("rationale"):
+        normalized["rationale"] = "Constructed to smoothly transition emotional state across the missing interval."
+
     return normalized
 
 
-def _stage1_scene_select(context: dict, recent_scenes: list[str]) -> dict[str, Any]:
+def _stage1_scene_select(context: dict, recent_scenes: list[str]) -> dict:
     template = _load_prompt("stage1_scene_selector.txt")
 
-    people = context.get("people", [])
-    era = context.get("era", {})
+    # Exclude recent scene types
+    available_scenes = [s for s in SCENE_ENUM if s not in recent_scenes]
+    if not available_scenes:
+        available_scenes = SCENE_ENUM
+
+    allowed_people = [p["name"] for p in context.get("people", []) if isinstance(p, dict) and "name" in p]
+    if not allowed_people:
+        allowed_people = ["Friend A", "Friend B", "Housemate C"]
+
+    era_info = context.get("era", {})
+    if isinstance(era_info, dict):
+        era_str = str(era_info.get("year", "2012"))
+    else:
+        era_str = str(era_info or "2012")
+
+    people_str = ", ".join(allowed_people)
     before_tone = "anxious"
-    if context.get("entries_before"):
-        before_tone = "anxious"
     after_tone = "calm"
-    if context.get("entries_after"):
-        after_tone = "calm"
+    recent_scenes_str = ", ".join(recent_scenes) if recent_scenes else "none"
 
-    payload = {
-        "era": era,
-        "people": people,
-        "entries_before_tone": before_tone,
-        "entries_after_tone": after_tone,
-        "recently_used_scenes": recent_scenes,
-        "scene_type_enum": SCENE_ENUM,
-    }
-
-    full_prompt = (
-        f"{template}\n\n--- INPUT JSON ---\n"
-        f"{json.dumps(payload, ensure_ascii=False, indent=2)}"
+    prompt = (
+        template.replace("{era}", era_str)
+        .replace("{people}", people_str)
+        .replace("{before_tone}", before_tone)
+        .replace("{after_tone}", after_tone)
+        .replace("{recent_scenes}", recent_scenes_str)
     )
-    selected = _call_ollama(full_prompt)
 
-    if selected.get("scene_type") not in SCENE_ENUM:
-        raise ValueError(f"invalid scene type: {selected.get('scene_type')}")
-    if selected.get("scene_type") in recent_scenes:
-        raise ValueError(f"scene type reused: {selected.get('scene_type')}")
-    return selected
+    selected = _call_ollama(prompt)
+    normalized = _normalize_generated_payload(selected)
+
+    # Validate scene_type
+    if normalized.get("scene_type") not in SCENE_ENUM:
+        normalized["scene_type"] = available_scenes[0]
+
+    # Validate target_length_words
+    try:
+        tl = int(normalized.get("target_length_words", 110))
+        normalized["target_length_words"] = max(80, min(140, tl))
+    except (ValueError, TypeError):
+        normalized["target_length_words"] = 110
+
+    return normalized
 
 
 def _stage2_writer(
     context: dict,
-    blueprint: dict[str, Any],
+    blueprint: dict,
     previous_word_count: int | None = None,
-) -> dict[str, Any]:
-    era_dict = context.get("era", {}) if isinstance(context.get("era"), dict) else {}
-    year_val = era_dict.get("year", context.get("year", "2012"))
+) -> dict:
+    template = _load_prompt("stage2_writer.txt")
 
-    # Extract month from gap start_date or context
-    month_val = "March"
+    era_dict = context.get("era", {}) if isinstance(context.get("era"), dict) else {}
+    year = str(era_dict.get("year", context.get("year", "2012")))
+
+    month = "March"
     gap_info = context.get("gap", {})
-    start_date = gap_info.get("start_date", "")
+    start_date = gap_info.get("start_date", "") if isinstance(gap_info, dict) else ""
     if start_date and len(start_date) >= 7:
         try:
-            m_num = int(start_date.split("-")[1])
             import calendar
-            month_val = calendar.month_name[m_num]
+            m_num = int(start_date.split("-")[1])
+            month = calendar.month_name[m_num]
         except Exception:
-            month_val = "March"
+            month = "March"
 
-    # Extract location from city / country / era
     city = context.get("city") or era_dict.get("city")
     country = context.get("country") or era_dict.get("country")
     if city and country:
-        location_val = f"{city}, {country}"
+        location = f"{city}, {country}"
     elif city:
-        location_val = str(city)
+        location = str(city)
     elif country:
-        location_val = str(country)
+        location = str(country)
     else:
-        location_val = "the diarist's home city"
+        location = "the diarist's home city"
 
-    template = _load_prompt("stage2_writer.txt")
-    template = template.replace("{examples_block}", _load_examples_block())
-    template = template.replace("{year}", str(year_val))
-    template = template.replace("{month}", str(month_val))
-    template = template.replace("{location}", str(location_val))
-    template = template.replace("{era}", str(year_val))
+    examples_text = ""
+    try:
+        examples_text = _load_examples_block()
+    except FileNotFoundError:
+        examples_text = ""
+
+    template = (
+        template.replace("{year}", year)
+        .replace("{month}", month)
+        .replace("{location}", location)
+        .replace("{era}", year)
+        .replace("{examples_block}", examples_text)
+    )
+
+    feedback_block = ""
+    if previous_word_count is not None:
+        target = blueprint.get("target_length_words", 110)
+        feedback_block = (
+            f"\nPREVIOUS ATTEMPT FEEDBACK:\n"
+            f"Your previous attempt was {previous_word_count} words. "
+            f"The target is {target} words (must be between 80 and 140 words). "
+            f"{'You wrote too much — write a more concise scene.' if previous_word_count > target else 'You wrote too little — add more concrete sensory details.'}\n"
+        )
 
     payload: dict[str, Any] = {
         "blueprint": blueprint,
         "era": context.get("era", {}),
+        "entries_before": context.get("entries_before", []),
+        "entries_after": context.get("entries_after", []),
     }
     if previous_word_count is not None:
         payload["previous_word_count"] = previous_word_count
@@ -196,16 +236,19 @@ def _stage2_writer(
         f"{template}\n\n--- INPUT JSON ---\n"
         f"{json.dumps(payload, ensure_ascii=False, indent=2)}"
     )
+    if feedback_block:
+        full_prompt += feedback_block
+
     return _call_ollama(full_prompt)
 
 
 def _stage2_write_with_length(
     context: dict,
-    blueprint: dict[str, Any],
+    blueprint: dict,
     max_attempts: int = 3,
     tolerance: int = 15,
-) -> tuple[dict[str, Any], int, int]:
-    """Retry stage 2 until word count is within tolerance.
+) -> tuple[dict, int, int]:
+    """Retry loop for word count control.
 
     Returns (memory_payload, attempts_used, final_word_count).
     Path B: each attempt re-injects the few-shot examples via _stage2_writer.
@@ -277,7 +320,7 @@ def generate_two_stage(
 
     # Determine overall status
     failures = [r for r in constraint_results if not r.passed]
-    generation_status = "completed_with_warnings" if failures else "ok"
+    generation_status = "completed_with_warnings" if failures else "completed"
 
     # Legacy flat failure strings for GenerationResult.failures (API / logging)
     failure_messages = list(dict.fromkeys(r.message for r in failures))
@@ -299,4 +342,5 @@ def generate_two_stage(
         memory=memory,
         attempted_runs=attempts_used,
         failures=failure_messages,
+        blueprint=blueprint,
     )

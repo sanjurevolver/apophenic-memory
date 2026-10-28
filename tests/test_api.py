@@ -43,9 +43,9 @@ def make_fake_generation_result() -> GenerationResult:
         gap_id="gap-2012-03-02-2012-03-26",
         word_count=len(FAKE_MEMORY_TEXT.split()),
         constraint_results=[cr.to_dict() for cr in FAKE_CONSTRAINT_RESULTS],
-        generation_status="ok",
+        generation_status="completed",
     )
-    return GenerationResult(memory=memory, attempted_runs=1, failures=[])
+    return GenerationResult(memory=memory, attempted_runs=1, failures=[], blueprint={"scene_type": "queue_at_shop", "target_length_words": 110})
 
 
 # ---------------------------------------------------------------------------
@@ -147,7 +147,7 @@ class TestPostGenerate:
 
     def test_generation_status_is_ok(self, client):
         r = client.post("/memories/generate", json={})
-        assert r.json()["generation_status"] == "ok"
+        assert r.json()["generation_status"] in ("completed", "ok")
 
     def test_memory_is_saved_to_db(self, client):
         client.post("/memories/generate", json={})

@@ -26,9 +26,9 @@ def test_generate_two_stage_returns_json_shape(monkeypatch):
 
     calls = []
 
-    def fake_call_ollama(prompt, model="llama3.1:8b"):
+    def fake_call_ollama(prompt, model="llama3.2:3b"):
         calls.append({"prompt": prompt, "model": model})
-        if "scene planner" in prompt.lower():
+        if "scene planner" in prompt.lower() or "stage 1: scene selector" in prompt.lower():
             return {
                 "scene_type": "queue_at_shop",
                 "setting": "the tea stall by the market",
@@ -65,14 +65,16 @@ def test_generate_two_stage_returns_json_shape(monkeypatch):
     assert result.memory.word_count <= 140
     assert result.memory.is_fabricated is True
     assert result.attempted_runs >= 1
+    assert hasattr(result, "blueprint")
+    assert result.blueprint.get("scene_type") == "queue_at_shop"
 
     # New: constraint_results is a list of dicts with constraint_id / passed / message
     assert isinstance(result.memory.constraint_results, list)
     assert all("constraint_id" in r and "passed" in r and "message" in r
                for r in result.memory.constraint_results)
 
-    # generation_status must be one of the two valid values
-    assert result.memory.generation_status in ("ok", "completed_with_warnings")
+    # generation_status must be one of the valid values
+    assert result.memory.generation_status in ("completed", "ok", "completed_with_warnings")
 
     # No contract-level or era errors (those are hard failures we care about)
     contract_results = [r for r in result.memory.constraint_results
@@ -80,4 +82,3 @@ def test_generate_two_stage_returns_json_shape(monkeypatch):
     assert all(r["passed"] for r in contract_results), (
         f"Contract/era constraint failed: {[r for r in contract_results if not r['passed']]}"
     )
-

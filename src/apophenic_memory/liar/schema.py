@@ -31,7 +31,7 @@ class Memory:
     word_count: int
     # Replaces the old hardcoded constraints_passed: list[str]
     constraint_results: list[dict] = field(default_factory=list)
-    generation_status: Literal["ok", "completed_with_warnings"] = "ok"
+    generation_status: Literal["completed", "completed_with_warnings", "ok"] = "completed"
 
 
 @dataclass
@@ -39,3 +39,4 @@ class GenerationResult:
     memory: Memory
     attempted_runs: int
     failures: list[str] = field(default_factory=list)
+    blueprint: dict = field(default_factory=dict)
