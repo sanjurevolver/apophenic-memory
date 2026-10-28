@@ -15,6 +15,7 @@ from apophenic_memory.liar.schema import ConstraintResult, GenerationResult, Mem
 
 import re
 import requests
+import time
 
 PROMPTS = Path(__file__).parent / "prompts"
 _DEFAULT_FEW_SHOT = Path(__file__).resolve().parents[3] / "test_data" / "few_shot_examples.md"
@@ -65,11 +66,27 @@ def _call_ollama(prompt: str, model: str = "llama3.2:3b") -> dict:
             "temperature": 0.7,
         },
     }
-    try:
-        resp = requests.post(url, json=payload, timeout=120)
-        resp.raise_for_status()
-    except requests.exceptions.RequestException as exc:
-        raise RuntimeError(f"Ollama request failed: {exc}") from exc
+
+    max_http_attempts = 3
+    for attempt in range(1, max_http_attempts + 1):
+        try:
+            resp = requests.post(url, json=payload, timeout=120)
+            resp.raise_for_status()
+            break
+        except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as exc:
+            is_500 = isinstance(exc, requests.exceptions.HTTPError) and getattr(exc.response, "status_code", None) == 500
+            is_conn = isinstance(exc, requests.exceptions.ConnectionError)
+            if (is_500 or is_conn) and attempt < max_http_attempts:
+                time.sleep(5)
+                continue
+            if attempt == max_http_attempts:
+                raise RuntimeError(f"Ollama request failed after {max_http_attempts} attempts: {exc}") from exc
+            raise RuntimeError(f"Ollama request failed: {exc}") from exc
+        except requests.exceptions.RequestException as exc:
+            if attempt < max_http_attempts:
+                time.sleep(5)
+                continue
+            raise RuntimeError(f"Ollama request failed: {exc}") from exc
 
     raw_text = resp.json().get("response", "")
 

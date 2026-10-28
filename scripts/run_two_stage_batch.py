@@ -18,15 +18,30 @@ def main() -> None:
     context = json.loads(context_path.read_text(encoding="utf-8"))
 
     results_path = REPO_ROOT / "test_data" / "large_batch_results.json"
-    total_runs = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 30
+    target_total = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 12
     recent_scenes: list[str] = []
     runs_data = []
 
-    print(f"Starting batch evaluation: {total_runs} runs using live Ollama...", flush=True)
+    # Preserve and append to existing runs if file exists
+    if results_path.exists():
+        try:
+            loaded = json.loads(results_path.read_text(encoding="utf-8"))
+            if isinstance(loaded, list):
+                runs_data = loaded
+        except json.JSONDecodeError:
+            runs_data = []
+
+    for r in runs_data:
+        st = r.get("scene_type")
+        if st and st != "unknown":
+            recent_scenes.append(st)
+
+    start_idx = len(runs_data) + 1
+    print(f"Starting batch evaluation: target {target_total} runs using live Ollama (preserving {len(runs_data)} existing runs)...", flush=True)
     print(f"Saving incremental progress to: {results_path}\n", flush=True)
 
-    for run_idx in range(1, total_runs + 1):
-        print(f"Executing run {run_idx}/{total_runs}...", end=" ", flush=True)
+    for run_idx in range(start_idx, target_total + 1):
+        print(f"Executing run {run_idx}/{target_total}...", end=" ", flush=True)
         start_time = time.perf_counter()
         result = generate_two_stage(context, recent_scenes=recent_scenes)
         latency = time.perf_counter() - start_time
@@ -68,6 +83,8 @@ def main() -> None:
         # Save incrementally on each run so progress is preserved if interrupted
         results_path.write_text(json.dumps(runs_data, indent=2), encoding="utf-8")
         print(f"done (scene={scene_type}, wc={actual_wc}/{target_wc}, attempts={attempts}, status={status}, latency={latency:.2f}s)")
+
+    total_runs = len(runs_data)
 
     # Print Full Run Markdown table
     print("\n## Evaluation Results\n")
