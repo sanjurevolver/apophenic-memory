@@ -95,6 +95,8 @@ def get_generate() -> dict:
         "rationale": result.memory.rationale,
         "gap_start": gap.get("start_date", ""),
         "gap_end": gap.get("end_date", ""),
+        "generation_status": result.memory.generation_status,
+        "constraint_results": result.memory.constraint_results,
     }
 
 

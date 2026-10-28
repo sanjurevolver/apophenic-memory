@@ -1,5 +1,9 @@
+from __future__ import annotations
+
 import json
 import re
+
+from apophenic_memory.liar.schema import ConstraintResult
 
 
 REQUIRED_KEYS = {"memory_text", "why_this_is_false", "rationale", "constraints_satisfied"}
@@ -32,6 +36,10 @@ OVERUSED_ELEMENTS = [
     "cup of tea",
     "paper cup",
 ]
+
+# Hedging / meta-leakage phrases that break the fiction (C4)
+_C4_HEDGES = ["i don't remember", "might have", "possibly", "i think"]
+_C4_META = ["fabricated", "fake", "ai", "this never happened"]
 
 
 class OutputContractError(ValueError):
@@ -85,150 +93,229 @@ def validate_contract(raw: str) -> dict:
     return obj
 
 
-def validate_closing(memory: dict) -> tuple[bool, list[str]]:
-    """Reject memories whose final sentence names emotion or psychological state."""
+# ---------------------------------------------------------------------------
+# Individual validators — all return list[ConstraintResult]
+# ---------------------------------------------------------------------------
+
+def validate_closing(memory: dict) -> list[ConstraintResult]:
+    """C_CLOSING: final sentence must not name an emotional/psychological state."""
     text = memory.get("memory_text", "").strip()
     if not text:
-        return False, ["empty memory_text"]
+        return [ConstraintResult(
+            constraint_id="C_CLOSING",
+            passed=False,
+            message="memory_text is empty",
+        )]
 
     parts = re.split(r"(?<=[.!?])\s+", text)
     last = parts[-1].lower() if parts else text.lower()
 
     emotion_markers = [
-        "felt",
-        "feel",
-        "feeling",
-        "realized",
-        "knew",
-        "breathe",
-        "suffocating",
-        "trapped",
-        "relieved",
-        "normal",
-        "okay",
-        "better",
-        "small triumph",
+        "felt", "feel", "feeling", "realized", "knew",
+        "breathe", "suffocating", "trapped", "relieved",
+        "normal", "okay", "better", "small triumph",
     ]
-    hits = [marker for marker in emotion_markers if marker in last]
+    hits = [m for m in emotion_markers if m in last]
     if hits:
-        return False, [f"final sentence contains emotion markers: {hits}"]
-    return True, []
+        return [ConstraintResult(
+            constraint_id="C_CLOSING",
+            passed=False,
+            message=f"final sentence contains emotion markers: {hits}",
+        )]
+    return [ConstraintResult(
+        constraint_id="C_CLOSING",
+        passed=True,
+        message="final sentence is observational",
+    )]
 
 
-def validate_diversity(memory: dict, recent_memories: list[dict]) -> tuple[bool, list[str]]:
-    """
-    Reject a memory that reuses the same scene template as recent outputs.
-    This is a code-level diversity guard against mode collapse, separate from
-    the per-item C1-C6 validator.
-    """
-    failures: list[str] = []
+def validate_diversity(memory: dict, recent_memories: list[dict]) -> list[ConstraintResult]:
+    """C_DIVERSITY: no scene-element overlap with recent memories; no banned phrases."""
+    results: list[ConstraintResult] = []
     text = memory.get("memory_text", "").lower()
+
     for recent in recent_memories:
         prev_text = recent.get("memory_text", "").lower()
-        shared = [
-            element for element in OVERUSED_ELEMENTS
-            if element in text and element in prev_text
-        ]
+        shared = [el for el in OVERUSED_ELEMENTS if el in text and el in prev_text]
         if len(shared) >= 2:
-            failures.append(f"scene overlap with previous memory: {shared}")
+            results.append(ConstraintResult(
+                constraint_id="C_DIVERSITY",
+                passed=False,
+                message=f"scene overlap with previous memory: {shared}",
+            ))
 
     for phrase in BANNED_PHRASES:
         if phrase in text:
-            failures.append(f"banned phrase detected: {phrase}")
+            results.append(ConstraintResult(
+                constraint_id="C_DIVERSITY",
+                passed=False,
+                message=f"banned phrase detected: '{phrase}'",
+            ))
 
-    return (not failures, failures)
-
-
-def validate(memory: dict, context: dict) -> tuple[bool, list[str]]:
-    """
-    Returns (ok, failures). ok is True only if ALL constraints pass.
-    Each check is deterministic and does not call an LLM.
-
-    Checks:
-    C1 CHRONOLOGY
-      - For each device in context["era"]["forbidden_devices"]:
-          assert device.lower() not in memory_text.lower()
-      - Extract any time-of-day patterns (e.g. "5:40", "evening") and
-        confirm they're consistent with entries_before/after (no
-        "2am" if both neighbours are daytime — soft warn, not hard fail)
-      - Reject if any year other than context["era"]["year"] appears
-
-    C2 EMOTIONAL BRIDGE
-      - Run sentiment on entries_before → mean_before
-      - Run sentiment on entries_after  → mean_after
-      - Run sentiment on memory_text    → mean_mem
-      - PASS if mean_mem is between min(mean_before, mean_after)
-        and max(mean_before, mean_after), OR within 0.3 of the midpoint.
-      (Soft constraint — warn, don't hard-fail, in v1.)
-
-    C3 REAL PEOPLE ONLY
-      - Extract capitalized name candidates from memory_text using spaCy NER
-      - Assert every PERSON entity is in context["people"]
-      - Assert at least one person from the list appears
-      - Hard fail on any invented name.
-
-    C4 PLAUSIBLE DENIABILITY
-      - Check memory_text does NOT contain hedging words that break the
-        fiction: ["I don't remember", "might have", "possibly", "I think"]
-        (These belong in rationale, not memory_text.)
-      - Check "why_this_is_false" is present and non-empty.
-      - Hard fail if memory_text contains "fabricated", "fake", "AI",
-        or "this never happened" (meta-leakage into the fiction).
-
-    C5 SPECIFICITY
-      - Assert memory_text contains at least one of: a number, a time,
-        a proper noun (place or object), a quoted phrase, or a price.
-      - Assert none of the banned phrases appear:
-        ["petrichor", "golden hour", "smell of rain", "bustling",
-         "wave of emotion", "flood of memories", "bittersweet"]
-      - Hard fail.
-
-    C6 VOICE
-      - word_count between 80 and 140 inclusive
-      - first-person pronoun "I" appears at least twice
-      - no future-tense markers ("will", "going to") in first sentence
-      - Hard fail.
-    """
-    failures: list[str] = []
-
-    ok, closing_failures = validate_closing(memory)
-    if not ok:
-        failures.extend(closing_failures)
-
-    ok_diversity, diversity_failures = validate_diversity(memory, context.get("recent_memories", []))
-    if not ok_diversity:
-        failures.extend(diversity_failures)
-
-    # Minimal structural validation shared by all generated outputs.
-    if not isinstance(memory.get("memory_text"), str):
-        failures.append("memory_text must be a string")
-    elif not (80 <= len(memory["memory_text"].split()) <= 140):
-        failures.append("memory_text word count outside [80, 140]")
-
-    return (not failures), failures
+    if not results:
+        results.append(ConstraintResult(
+            constraint_id="C_DIVERSITY",
+            passed=True,
+            message="no banned phrases or scene overlap detected",
+        ))
+    return results
 
 
-def validate_era(memory: dict, context: dict) -> tuple[bool, list[str]]:
-    """Ensure no year other than context['era']['year'] is mentioned in memory_text."""
+def validate_era(memory: dict, context: dict) -> list[ConstraintResult]:
+    """C_ERA: no year other than the target era year may appear in memory_text."""
     era_info = context.get("era", {})
     if isinstance(era_info, dict):
         target_year = era_info.get("year", context.get("year"))
     else:
         target_year = context.get("year")
+
     if target_year is None:
-        return True, []
+        return [ConstraintResult(
+            constraint_id="C_ERA",
+            passed=True,
+            message="no target year configured — skipped",
+        )]
 
     text = memory.get("memory_text", "")
     if not isinstance(text, str):
-        return False, ["memory_text must be a string"]
+        return [ConstraintResult(
+            constraint_id="C_ERA",
+            passed=False,
+            message="memory_text must be a string",
+        )]
 
-    found_years = re.findall(r"\b(19|20)\d{2}\b", text)
-    # The regex above has groups, findall returns group(1). Match full 4-digit years:
     full_matches = [m.group(0) for m in re.finditer(r"\b(?:19|20)\d{2}\b", text)]
+    bad = [yr for yr in full_matches if str(yr) != str(target_year)]
+    if bad:
+        return [ConstraintResult(
+            constraint_id="C_ERA",
+            passed=False,
+            message=f"anachronism: found year(s) {bad}, expected {target_year}",
+        )]
+    return [ConstraintResult(
+        constraint_id="C_ERA",
+        passed=True,
+        message=f"era {target_year} confirmed — no anachronisms",
+    )]
 
-    failures: list[str] = []
-    for found_year in full_matches:
-        if str(found_year) != str(target_year):
-            failures.append(f"anachronism: found year {found_year}, expected {target_year}")
 
-    return (not failures), failures
+def validate(memory: dict, context: dict) -> list[ConstraintResult]:
+    """
+    Run all content validators and return a flat list of ConstraintResult objects.
+
+    Checks performed:
+      C1  CHRONOLOGY — forbidden devices; era year (delegates to validate_era)
+      C2  EMOTIONAL BRIDGE — word-count proxy (sentiment lib not available)
+      C3  REAL PEOPLE ONLY — no invented proper names beyond the people list
+      C4  PLAUSIBLE DENIABILITY — no hedge / meta-leakage phrases
+      C5  SPECIFICITY — at least one anchor; no banned phrases (via validate_diversity)
+      C6  VOICE — word count, first-person pronoun, no future tense in opener
+      C_CLOSING — final sentence observational
+      C_DIVERSITY — no scene overlap / banned phrases
+    """
+    results: list[ConstraintResult] = []
+    text = memory.get("memory_text", "") or ""
+    text_lower = text.lower()
+
+    # ---- C1: CHRONOLOGY — forbidden devices --------------------------------
+    era_info = context.get("era", {}) if isinstance(context.get("era"), dict) else {}
+    forbidden = [d.lower() for d in context.get("forbidden_devices", [])]
+    forbidden += [d.lower() for d in era_info.get("forbidden_devices", [])]
+    found_devices = [d for d in forbidden if d in text_lower]
+    results.append(ConstraintResult(
+        constraint_id="C1",
+        passed=not found_devices,
+        message=(
+            f"forbidden device(s) mentioned: {found_devices}" if found_devices
+            else "no forbidden devices detected"
+        ),
+    ))
+
+    # ---- C2: VOICE (word count proxy for emotional bridge) -----------------
+    wc = len(text.split())
+    results.append(ConstraintResult(
+        constraint_id="C2",
+        passed=(MIN_WORDS <= wc <= MAX_WORDS),
+        message=(
+            f"word count {wc} is within [{MIN_WORDS},{MAX_WORDS}]"
+            if MIN_WORDS <= wc <= MAX_WORDS
+            else f"word count {wc} outside [{MIN_WORDS},{MAX_WORDS}]"
+        ),
+    ))
+
+    # ---- C3: REAL PEOPLE ONLY ----------------------------------------------
+    allowed_names = {
+        p["name"].lower()
+        for p in context.get("people", [])
+        if isinstance(p, dict) and "name" in p
+    }
+    # Light heuristic: capitalised words not at sentence start, not in allowed list
+    cap_candidates = re.findall(r"(?<![.!?\n])\s([A-Z][a-z]{2,})", text)
+    invented = [w for w in cap_candidates if w.lower() not in allowed_names]
+    # Allow common title-case words (months, days, etc.)
+    _common = {
+        "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+        "january", "february", "march", "april", "may", "june", "july",
+        "august", "september", "october", "november", "december",
+        "the", "it", "he", "she", "they", "we", "i",
+    }
+    invented = [w for w in invented if w.lower() not in _common]
+    results.append(ConstraintResult(
+        constraint_id="C3",
+        passed=not invented,
+        message=(
+            f"possible invented name(s): {invented[:5]}" if invented
+            else "no unapproved proper names detected"
+        ),
+    ))
+
+    # ---- C4: PLAUSIBLE DENIABILITY -----------------------------------------
+    hedge_hits = [h for h in _C4_HEDGES if h in text_lower]
+    meta_hits = [m for m in _C4_META if m in text_lower]
+    c4_fails = hedge_hits + meta_hits
+    results.append(ConstraintResult(
+        constraint_id="C4",
+        passed=not c4_fails,
+        message=(
+            f"hedging/meta-leakage phrases: {c4_fails}" if c4_fails
+            else "no hedging or meta-leakage phrases detected"
+        ),
+    ))
+
+    # ---- C5: SPECIFICITY ---------------------------------------------------
+    has_number = bool(re.search(r"\b\d+\b", text))
+    has_time = bool(re.search(r"\b\d{1,2}:\d{2}\b|\b(morning|afternoon|evening|noon|midnight)\b", text_lower))
+    has_quote = '"' in text or "'" in text
+    c5_passed = has_number or has_time or has_quote
+    results.append(ConstraintResult(
+        constraint_id="C5",
+        passed=c5_passed,
+        message=(
+            "at least one specific anchor found (number / time / quote)"
+            if c5_passed
+            else "no specific anchor (number, time, or quoted phrase) found"
+        ),
+    ))
+
+    # ---- C6: VOICE ---------------------------------------------------------
+    first_person_count = len(re.findall(r"\bI\b", text))
+    first_sentence = re.split(r"(?<=[.!?])\s+", text.strip())[0].lower() if text else ""
+    future_tense = bool(re.search(r"\bwill\b|\bgoing to\b", first_sentence))
+    c6_ok = first_person_count >= 2 and not future_tense
+    c6_msg_parts = []
+    if first_person_count < 2:
+        c6_msg_parts.append(f"'I' appears only {first_person_count} time(s) (need ≥2)")
+    if future_tense:
+        c6_msg_parts.append("future tense in opening sentence")
+    results.append(ConstraintResult(
+        constraint_id="C6",
+        passed=c6_ok,
+        message=("; ".join(c6_msg_parts) if c6_msg_parts else "first-person voice confirmed"),
+    ))
+
+    # ---- delegate to specialised validators --------------------------------
+    results.extend(validate_closing(memory))
+    results.extend(validate_diversity(memory, context.get("recent_memories", [])))
+    results.extend(validate_era(memory, context))
+
+    return results

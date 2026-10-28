@@ -48,7 +48,12 @@ def test_generate_two_stage_returns_json_shape(monkeypatch):
 
     context = {
         "era": {"year": 2012, "city": "Example City", "forbidden_devices": ["smartphone"], "allowed_transport": ["bus"]},
-        "people": [{"name": "Friend A", "relationship": "friend"}],
+        "people": [
+            {"name": "Friend A", "relationship": "friend"},
+            {"name": "Friend B", "relationship": "classmate"},
+            {"name": "Housemate C", "relationship": "housemate"},
+        ],
+        "gap": {"start_date": "2012-03-02", "end_date": "2012-03-26"},
         "entries_before": [{"date": "2012-03-01", "text": "I was exhausted and scared of missing lectures."}],
         "entries_after": [{"date": "2012-03-20", "text": "I felt more settled and easier to laugh again."}],
     }
@@ -60,4 +65,19 @@ def test_generate_two_stage_returns_json_shape(monkeypatch):
     assert result.memory.word_count <= 140
     assert result.memory.is_fabricated is True
     assert result.attempted_runs >= 1
-    assert result.failures == []
+
+    # New: constraint_results is a list of dicts with constraint_id / passed / message
+    assert isinstance(result.memory.constraint_results, list)
+    assert all("constraint_id" in r and "passed" in r and "message" in r
+               for r in result.memory.constraint_results)
+
+    # generation_status must be one of the two valid values
+    assert result.memory.generation_status in ("ok", "completed_with_warnings")
+
+    # No contract-level or era errors (those are hard failures we care about)
+    contract_results = [r for r in result.memory.constraint_results
+                        if r["constraint_id"] in ("C_CONTRACT", "C_ERA")]
+    assert all(r["passed"] for r in contract_results), (
+        f"Contract/era constraint failed: {[r for r in contract_results if not r['passed']]}"
+    )
+

@@ -11,7 +11,7 @@ from apophenic_memory.liar.constraints import (
     validate_contract,
     validate_era,
 )
-from apophenic_memory.liar.schema import GenerationResult, Memory
+from apophenic_memory.liar.schema import ConstraintResult, GenerationResult, Memory
 
 import re
 import requests
@@ -226,6 +226,39 @@ def _stage2_write_with_length(
     return last_payload, max_attempts, last_wc
 
 
+def _run_validators(memory_payload: dict, context: dict) -> list[ConstraintResult]:
+    """Run all constraint validators and return a flat list of ConstraintResult."""
+    results: list[ConstraintResult] = []
+
+    # Structural contract (validate_contract operates on raw JSON string)
+    try:
+        validate_contract(json.dumps(memory_payload))
+        results.append(ConstraintResult(
+            constraint_id="C_CONTRACT",
+            passed=True,
+            message="output JSON contract satisfied",
+        ))
+    except OutputContractError as exc:
+        results.append(ConstraintResult(
+            constraint_id="C_CONTRACT",
+            passed=False,
+            message=f"contract error: {exc}",
+        ))
+
+    # Content validators (C1–C6, C_CLOSING, C_DIVERSITY, C_ERA)
+    try:
+        content_results = validate(memory_payload, context)
+        results.extend(content_results)
+    except Exception as exc:  # pragma: no cover - defensive runtime guard
+        results.append(ConstraintResult(
+            constraint_id="C_VALIDATE",
+            passed=False,
+            message=f"validator raised unexpectedly: {exc}",
+        ))
+
+    return results
+
+
 def generate_two_stage(
     context: dict,
     recent_scenes: list[str],
@@ -238,53 +271,32 @@ def generate_two_stage(
     memory_payload = _normalize_generated_payload(raw_payload)
 
     text = memory_payload.get("memory_text", "")
-    failures: list[str] = []
-    cleaned = None
 
-    try:
-        cleaned = validate_contract(json.dumps(memory_payload))
-    except OutputContractError as exc:
-        failures.append(f"contract_error: {exc}")
+    # Run all validators — get structured results
+    constraint_results = _run_validators(memory_payload, context)
 
-    if cleaned is not None:
-        try:
-            ok, validator_failures = validate(cleaned, context)
-            if not ok:
-                failures.extend(validator_failures)
-        except Exception as exc:  # pragma: no cover - defensive runtime guard
-            failures.append(f"validate_error: {exc}")
+    # Determine overall status
+    failures = [r for r in constraint_results if not r.passed]
+    generation_status = "completed_with_warnings" if failures else "ok"
 
-        try:
-            closing_ok, closing_failures = validate_closing(cleaned)
-            if not closing_ok:
-                failures.extend(closing_failures)
-        except Exception as exc:  # pragma: no cover - defensive runtime guard
-            failures.append(f"closing_error: {exc}")
-
-        try:
-            era_ok, era_failures = validate_era(cleaned, context)
-            if not era_ok:
-                failures.extend(era_failures)
-        except Exception as exc:  # pragma: no cover - defensive runtime guard
-            failures.append(f"era_error: {exc}")
-
-    if cleaned is None:
-        cleaned = memory_payload
+    # Legacy flat failure strings for GenerationResult.failures (API / logging)
+    failure_messages = list(dict.fromkeys(r.message for r in failures))
 
     word_count = len(text.split()) if isinstance(text, str) else 0
     memory = Memory(
         id=f"mem-{len(recent_scenes) + 1}",
         memory_text=text,
-        why_this_is_false=cleaned.get("why_this_is_false", ""),
-        rationale=cleaned.get("rationale", ""),
+        why_this_is_false=memory_payload.get("why_this_is_false", ""),
+        rationale=memory_payload.get("rationale", ""),
         is_fabricated=True,
         gap_id="stage2-generated",
         word_count=word_count,
-        constraints_passed=["C1", "C2", "C2b", "C3", "C4", "C5", "C6"],
+        constraint_results=[r.to_dict() for r in constraint_results],
+        generation_status=generation_status,
     )
 
     return GenerationResult(
         memory=memory,
         attempted_runs=attempts_used,
-        failures=list(dict.fromkeys(failures)),
+        failures=failure_messages,
     )
