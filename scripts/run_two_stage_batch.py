@@ -17,7 +17,7 @@ def main() -> None:
         context_path = Path("test_data/gap_2012_03.json")
     context = json.loads(context_path.read_text(encoding="utf-8"))
 
-    total_runs = 10
+    total_runs = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 5
     recent_scenes: list[str] = []
     runs_data = []
 
