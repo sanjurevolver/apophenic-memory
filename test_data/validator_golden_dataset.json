@@ -1,0 +1,102 @@
+[
+  {
+    "id": "valid-1-tea-stall",
+    "memory_text": "In March 2012, I waited in the queue outside the tea stall by the market with Friend A after class. We had a list of 3 errands and Friend A held the copper coins while we counted the change twice. The shop smelled of roasted cardamom, and the kettle hissed steadily on the metal stove behind the counter. I stood quietly with my notebook tucked under my arm while Friend A asked for two cups of tea. I slid the coins across the wooden counter and waited for the steam to rise.",
+    "expected_pass": true,
+    "gap_start": "2012-03-02",
+    "gap_end": "2012-03-26",
+    "why_this_is_false": "Fictional memory to bridge the revision gap.",
+    "rationale": "Constructed around a domestic market errand.",
+    "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"]
+  },
+  {
+    "id": "valid-2-bus-ride",
+    "memory_text": "I boarded the city bus on route 4 at 5:00 PM with Friend B after our afternoon lecture ended. The bus was half-empty and we found two seats near the open back door where the evening breeze blew in. Friend B showed me a folded paper receipt with 12 phone numbers scribbled on the margins. We rode past the market square without speaking until the conductor rang the double bell. I tucked my bus ticket into my pocket and watched the streetlights flicker on along the road.",
+    "expected_pass": true,
+    "gap_start": "2012-03-02",
+    "gap_end": "2012-03-26",
+    "why_this_is_false": "Fictional bus trip during March 2012.",
+    "rationale": "Connects late-afternoon travel to diarist schedule.",
+    "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"]
+  },
+  {
+    "id": "valid-3-library-study",
+    "memory_text": "Housemate C and I stayed inside the library until 8:00 PM on a Tuesday in March 2012. The room grew cold as the ceiling fans slowed down, and only two green desk lamps remained illuminated. Housemate C stacked 4 reference volumes onto the wooden cart and returned the borrowing card to the clerk. I copied the final diagram into my exercise notebook with a blue ballpoint pen. I closed the heavy binder and pushed the wooden chair under the reading table.",
+    "expected_pass": true,
+    "gap_start": "2012-03-02",
+    "gap_end": "2012-03-26",
+    "why_this_is_false": "The diarist never studied late with Housemate C on that evening.",
+    "rationale": "Bridges the study gap before the exam.",
+    "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"]
+  },
+  {
+    "id": "valid-4-hostel-cooking",
+    "memory_text": "On a damp Saturday morning in 2012, I helped Friend A cook a simple meal of rice and lentils in the hostel kitchen. We peeled 3 small onions and chopped two green chilies on a plastic chopping board beside the sink. Friend A stirred the brass pot with an aluminium spoon while the radio played cricket commentary in the corner. I placed two stainless steel plates on the kitchen table and wiped the counter with a dry rag. I turned the brass knob on the gas cylinder and stepped out onto the balcony.",
+    "expected_pass": true,
+    "gap_start": "2012-03-02",
+    "gap_end": "2012-03-26",
+    "why_this_is_false": "Fictional domestic cooking scene.",
+    "rationale": "Grounded in domestic hostel routine.",
+    "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"]
+  },
+  {
+    "id": "valid-5-watch-repair",
+    "memory_text": "I walked with Housemate C to the corner repair shop at 4:30 in the afternoon during the second week of March 2012. The watchmaker examined my grandfather's mechanical wristwatch under a magnifying lens on his workbench. He replaced the tiny balance spring and charged us 25 rupees for the repair. Housemate C stood by the door examining the antique pendulum clocks hanging along the lime-washed wall. I wound the crown three turns and slipped the leather strap around my wrist.",
+    "expected_pass": true,
+    "gap_start": "2012-03-02",
+    "gap_end": "2012-03-26",
+    "why_this_is_false": "The watchmaker errand never took place.",
+    "rationale": "Creates an era-appropriate mechanical repair scene.",
+    "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"]
+  },
+  {
+    "id": "invalid-1-unapproved-name",
+    "memory_text": "In March 2012, I walked to the commercial market with John and Priya to buy some groceries for the flat. John carried two cloth bags while Priya counted the change for 5 mangoes at the fruit stall. We took the city bus back home and divided the vegetables evenly in the kitchen pantry. I placed my notebook on the counter and poured three glasses of cold water from the clay pot. I set the brass jug on the shelf and closed the pantry door.",
+    "expected_pass": false,
+    "gap_start": "2012-03-02",
+    "gap_end": "2012-03-26",
+    "why_this_is_false": "Invented characters John and Priya.",
+    "rationale": "Fails C3 constraint.",
+    "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"]
+  },
+  {
+    "id": "invalid-2-anachronism-year",
+    "memory_text": "In March 2017, I met Friend A at the central railway platform to collect a wooden parcel sent from my hometown. We stood under the platform clock waiting for the 3:15 train to arrive from the northern junction. Friend A held the baggage receipt with 2 serial numbers written in black ink while we counted the coaches passing by. I carried the cardboard box over to the cycle stand and tied it firmly with nylon twine. I tightened the knot with both hands and pushed the pedal forward.",
+    "expected_pass": false,
+    "gap_start": "2012-03-02",
+    "gap_end": "2012-03-26",
+    "why_this_is_false": "Anachronistic year 2017.",
+    "rationale": "Fails C_ERA and C1 constraints.",
+    "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"]
+  },
+  {
+    "id": "invalid-3-emotional-ending",
+    "memory_text": "On a quiet evening in March 2012, I sat on the hostel steps with Friend A watching the birds fly over the trees. We had spent 4 hours revising physics formulas and both our notebooks were completely filled with notes. Friend A offered me half a butter biscuit and talked about visiting the lake on Sunday. I drank the warm water from my steel bottle and listened to the distant city bells ringing. I felt relieved and finally happy that the stressful week was over.",
+    "expected_pass": false,
+    "gap_start": "2012-03-02",
+    "gap_end": "2012-03-26",
+    "why_this_is_false": "Ends on emotional summary.",
+    "rationale": "Fails C_CLOSING constraint.",
+    "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"]
+  },
+  {
+    "id": "invalid-4-forbidden-device",
+    "memory_text": "In March 2012, I sat in the university canteen with Friend B while checking new notifications on my smartphone. I opened the whatsapp group on the touch-screen device to see if 6 classmates had reached the examination hall on campus. Friend B asked to borrow my phone to send a quick text message to his parents about the weekend bus tickets. I handed the phone across the laminate table and finished my cup of hot coffee. I picked up my canvas backpack and walked towards the library entrance.",
+    "expected_pass": false,
+    "gap_start": "2012-03-02",
+    "gap_end": "2012-03-26",
+    "why_this_is_false": "Mentions smartphone and whatsapp (forbidden in 2012 era).",
+    "rationale": "Fails C1 forbidden device constraint.",
+    "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"]
+  },
+  {
+    "id": "invalid-5-ai-meta-leakage",
+    "memory_text": "As an AI, I am generating this memory for March 2012 where I met Friend A near the old book depot. This memory was fabricated to fill the gap of 24 days in the student's personal calendar. Friend A carried 2 paperback novels and asked whether we should walk past the botanical gardens. I agreed and we strolled along the shaded path until the streetlights switched on. I opened my umbrella against the mist and stepped onto the damp gravel.",
+    "expected_pass": false,
+    "gap_start": "2012-03-02",
+    "gap_end": "2012-03-26",
+    "why_this_is_false": "Contains explicit AI meta-leakage.",
+    "rationale": "Fails C4 plausible deniability constraint.",
+    "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"]
+  }
+]

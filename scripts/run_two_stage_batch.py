@@ -80,7 +80,6 @@ def main() -> None:
     first_pass_count = sum(1 for r in runs_data if r["passed_first_attempt"])
     final_compliance_count = sum(1 for r in runs_data if r["passed_final"])
     avg_latency = sum(r["latency_seconds"] for r in runs_data) / total_runs if total_runs else 0.0
-    false_positive_rate = 0.0  # Estimated at 0 following C4/C3 bug fixes
 
     all_failed_ids = [fid for r in runs_data for fid in r["failed_constraints"]]
     if all_failed_ids:
@@ -92,7 +91,7 @@ def main() -> None:
     print(f"- **First-pass compliance:** {first_pass_count}/{total_runs} ({first_pass_count / total_runs * 100:.1f}%)")
     print(f"- **Final compliance:** {final_compliance_count}/{total_runs} ({final_compliance_count / total_runs * 100:.1f}%)")
     print(f"- **Average generation latency:** {avg_latency:.2f} seconds")
-    print(f"- **False positive rate:** {false_positive_rate:.1f}%")
+    print("- **Validator accuracy:** Measured separately in measure_validator_accuracy.py")
     print(f"- **Most common failure constraint:** {most_common_failure}\n")
 
 
