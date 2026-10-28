@@ -3,9 +3,11 @@ from __future__ import annotations
 import json
 import uuid
 from pathlib import Path
+from typing import Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
 
 from apophenic_memory.ingest.diary_parser import parse_diary
 from apophenic_memory.timeline.builder import build_timeline, detect_gaps
@@ -19,11 +21,40 @@ STATIC_DIR = PROJECT_ROOT / "static"
 app = FastAPI(title="Apophenic Memory API")
 
 
+# ---------------------------------------------------------------------------
+# Request body models
+# ---------------------------------------------------------------------------
+
+class GenerateRequest(BaseModel):
+    """Body for POST /memories/generate.
+
+    gap_start and gap_end are optional — if omitted the default gap file is used.
+    """
+    gap_start: Optional[str] = None
+    gap_end: Optional[str] = None
+
+
+class WipeRequest(BaseModel):
+    """Body for POST /data/wipe.
+
+    Must include ``{"confirm": true}`` — any other value returns 400.
+    """
+    confirm: bool
+
+
+# ---------------------------------------------------------------------------
+# Lifecycle
+# ---------------------------------------------------------------------------
+
 @app.on_event("startup")
 def startup_event() -> None:
     """Initialise the SQLite database on server startup."""
     init_db()
 
+
+# ---------------------------------------------------------------------------
+# Endpoints
+# ---------------------------------------------------------------------------
 
 @app.get("/", response_class=HTMLResponse)
 def index() -> HTMLResponse:
@@ -58,8 +89,13 @@ def get_timeline() -> dict:
     }
 
 
-@app.get("/generate")
-def get_generate() -> dict:
+@app.post("/memories/generate")
+def post_generate(body: GenerateRequest) -> dict:
+    """Generate a fabricated memory for a gap.
+
+    Accepts an optional ``gap_start`` / ``gap_end`` pair.  When omitted, falls
+    back to the default ``gap_2012_03.json`` test-data file.
+    """
     gap_file = TEST_DATA_DIR / "gap_2012_03.json"
     if not gap_file.exists():
         raise HTTPException(status_code=500, detail="gap_2012_03.json not found")
@@ -68,6 +104,14 @@ def get_generate() -> dict:
         context = json.loads(gap_file.read_text(encoding="utf-8"))
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Failed to read context: {exc}")
+
+    # Override gap dates if the caller supplied them
+    if body.gap_start or body.gap_end:
+        context.setdefault("gap", {})
+        if body.gap_start:
+            context["gap"]["start_date"] = body.gap_start
+        if body.gap_end:
+            context["gap"]["end_date"] = body.gap_end
 
     try:
         result = generate_two_stage(context, recent_scenes=[])
@@ -95,46 +139,27 @@ def get_generate() -> dict:
         "rationale": result.memory.rationale,
         "gap_start": gap.get("start_date", ""),
         "gap_end": gap.get("end_date", ""),
+        "generation_status": result.memory.generation_status,
+        "constraint_results": result.memory.constraint_results,
     }
 
 
-@app.get("/wipe", response_class=HTMLResponse)
-def wipe_data() -> HTMLResponse:
-    rows_deleted = wipe_db()
+@app.post("/data/wipe")
+def post_wipe(body: WipeRequest) -> dict:
+    """Wipe all persisted memories.
 
-    return HTMLResponse(
-        content=f"""<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Wiped</title>
-    <style>
-        body {{
-            background: #0f1115;
-            color: #edf2ff;
-            font-family: Arial, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            text-align: center;
-        }}
-        .box {{
-            padding: 32px;
-            background: #171b22;
-            border: 1px solid #2a3240;
-            border-radius: 12px;
-        }}
-        a {{ color: #9ad0ff; text-decoration: none; font-weight: bold; }}
-    </style>
-</head>
-<body>
-    <div class="box">
-        <h2>All data wiped.</h2>
-        <p>{rows_deleted} memory record(s) deleted.</p>
-        <p><a href="/">Return to Timeline</a></p>
-    </div>
-</body>
-</html>"""
-    )
+    Requires ``{"confirm": true}`` in the request body.
+    Returns 400 if confirm is False.
+    """
+    if not body.confirm:
+        raise HTTPException(
+            status_code=400,
+            detail="Wipe not confirmed. Send {\"confirm\": true} to proceed.",
+        )
+
+    rows_deleted = wipe_db()
+    return {
+        "status": "wiped",
+        "rows_deleted": rows_deleted,
+        "message": "All data wiped. Please refresh the page.",
+    }

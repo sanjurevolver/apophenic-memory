@@ -398,7 +398,7 @@
             if (prevErr) prevErr.remove();
 
             try {
-                const response = await fetch('http://127.0.0.1:8000/generate');
+                const response = await fetch('http://127.0.0.1:8000/memories/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gap_start: gap.start_date, gap_end: gap.end_date }) });
                 if (!response.ok) {
                     throw new Error(`Generation failed with status ${response.status}`);
                 }
@@ -469,7 +469,11 @@
                         "Are you sure you want to panic wipe all data? This cannot be undone."
                     );
                     if (confirmed) {
-                        window.location.href = 'http://127.0.0.1:8000/wipe';
+                        fetch('http://127.0.0.1:8000/data/wipe', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ confirm: true }),
+                        }).then(r => r.json()).then(d => { alert(d.message); window.location.reload(); }).catch(e => alert('Wipe failed: ' + e.message));
                     }
                 });
             }
