@@ -108,6 +108,31 @@
             border-color: rgba(229, 185, 95, 0.4);
         }
 
+        .badge.fabricated-badge,
+        .card.fabricated .badge {
+            color: #f87171;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid #ef4444;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.2);
+        }
+
+        .footer-disclaimer {
+            margin-top: 36px;
+            padding: 18px 20px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            font-size: 0.82rem;
+            color: var(--muted);
+            letter-spacing: 0.02em;
+        }
+
+        .footer-disclaimer p {
+            margin: 0;
+            color: var(--muted);
+        }
+
         .date {
             color: var(--muted);
             font-size: 0.88rem;
@@ -405,6 +430,10 @@
         <div id="timeline" class="timeline">
             <div class="card"><p>Loading timeline...</p></div>
         </div>
+
+        <footer class="footer-disclaimer">
+            <p>All generated memories are speculative fictions. Do not present them as real events.</p>
+        </footer>
     </div>
 
     <script>
@@ -605,7 +634,7 @@
             const header = document.createElement('div');
             header.className = 'card-header';
             header.innerHTML = `
-                <span class="badge">Fabricated Memory</span>
+                <span class="badge fabricated-badge">FABRICATED MEMORY</span>
                 <span class="date">${displayDate}</span>
             `;
             gapCard.appendChild(header);
