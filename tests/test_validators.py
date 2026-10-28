@@ -79,3 +79,45 @@ def test_validate_c4_fails_with_as_an_ai():
     assert c4_results
     assert any(not r.passed for r in c4_results)
 
+def test_validate_c3_approved_names_pass():
+    context = {"people": [{"name": "Maya"}, {"name": "Rohan"}]}
+    memory = {
+        "memory_text": "I sat on the steps with Maya and Rohan while we waited for the afternoon bus.",
+        "why_this_is_false": "fictional",
+        "rationale": "bridge",
+        "constraints_satisfied": [],
+    }
+    results = validate(memory, context)
+    c3_results = [r for r in results if r.constraint_id == "C3"]
+    assert c3_results
+    assert all(r.passed for r in c3_results)
+
+
+def test_validate_c3_unapproved_person_fails():
+    context = {"people": [{"name": "Friend A"}]}
+    memory = {
+        "memory_text": "I walked to the corner with John and Priya to pick up some groceries.",
+        "why_this_is_false": "fictional",
+        "rationale": "bridge",
+        "constraints_satisfied": [],
+    }
+    results = validate(memory, context)
+    c3_results = [r for r in results if r.constraint_id == "C3"]
+    assert c3_results
+    assert any(not r.passed for r in c3_results)
+    assert any("John" in r.message or "Priya" in r.message for r in c3_results if not r.passed)
+
+
+def test_validate_c3_sentence_start_common_words_pass():
+    context = {"people": [{"name": "Friend A"}]}
+    memory = {
+        "memory_text": "Second attempts are always harder. Hometown streets were quiet at dusk. Walking home with Friend A was peaceful.",
+        "why_this_is_false": "fictional",
+        "rationale": "bridge",
+        "constraints_satisfied": [],
+    }
+    results = validate(memory, context)
+    c3_results = [r for r in results if r.constraint_id == "C3"]
+    assert c3_results
+    assert all(r.passed for r in c3_results)
+

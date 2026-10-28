@@ -50,6 +50,47 @@ _C4_META = [
 ]
 _C4_AI_REGEX = re.compile(r"\bai\b|\ba\.i\.(?!\w)", re.IGNORECASE)
 
+# C3: Common title words and grammar exempt from person checking
+_COMMON_TITLE_WORDS = {
+    "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+    "january", "february", "march", "april", "may", "june", "july",
+    "august", "september", "october", "november", "december",
+    "the", "it", "he", "she", "they", "we", "i", "you", "my", "our", "your",
+    "his", "her", "their", "there", "here", "this", "that", "these", "those",
+    "what", "when", "where", "which", "who", "whom", "whose", "why", "how",
+    "and", "but", "or", "so", "for", "yet", "nor", "in", "on", "at", "to",
+    "from", "by", "with", "about", "after", "before", "during", "without",
+    "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+    "first", "second", "third", "fourth", "fifth",
+    "hometown", "meanwhile", "suddenly", "finally", "instead", "yesterday",
+    "today", "tomorrow", "tonight", "morning", "afternoon", "evening", "night",
+    "noon", "midnight", "walking", "looking", "standing", "sitting", "waiting",
+    "listening", "watching", "remembering", "thinking", "feeling", "coming", "going",
+    "leaving", "arriving", "turning", "reaching", "holding", "carrying", "opening",
+    "closing", "crossing", "stepping", "stopping", "starting",
+    "street", "road", "avenue", "lane", "station", "market", "campus", "library",
+    "hall", "room", "floor", "building", "gate", "block", "house", "shop", "stall",
+    "corner", "center", "centre", "bridge", "park", "garden", "lake", "river",
+    "hostel", "canteen", "cafe", "coffee", "tea", "hotel", "city", "town", "college",
+    "university", "school", "class", "classroom", "kitchen", "bus", "train", "taxi",
+}
+
+_COMMON_PERSON_NAMES = {
+    "john", "priya", "suresh", "ramesh", "rahul", "amit", "anita", "david", "michael",
+    "sarah", "emily", "mohammed", "ali", "kumar", "singh", "sharma", "patel", "gupta",
+    "neha", "pooja", "deepak", "vikram", "raj", "arun", "kavita", "sunita", "meera",
+    "maya", "rohan", "alex", "chris", "sam", "emma", "daniel", "james", "mary",
+}
+
+_PERSON_PRE_MARKERS = {
+    "with", "and", "told", "asked", "said", "called", "met", "saw", "beside",
+    "to", "from", "by", "hugged", "followed", "watched", "accompanied",
+}
+_PERSON_POST_MARKERS = {
+    "said", "told", "asked", "and", "looked", "smiled", "walked", "stood", "sat",
+    "came", "held", "called",
+}
+
 
 class OutputContractError(ValueError):
     """Raised when the model output does not meet the required JSON contract."""
@@ -253,29 +294,88 @@ def validate(memory: dict, context: dict) -> list[ConstraintResult]:
     ))
 
     # ---- C3: REAL PEOPLE ONLY ----------------------------------------------
-    allowed_names = {
-        p["name"].lower()
-        for p in context.get("people", [])
-        if isinstance(p, dict) and "name" in p
-    }
-    # Light heuristic: capitalised words not at sentence start, not in allowed list
-    cap_candidates = re.findall(r"(?<![.!?\n])\s([A-Z][a-z]{2,})", text)
-    invented = [w for w in cap_candidates if w.lower() not in allowed_names]
-    # Allow common title-case words (months, days, etc.)
-    _common = {
-        "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
-        "january", "february", "march", "april", "may", "june", "july",
-        "august", "september", "october", "november", "december",
-        "the", "it", "he", "she", "they", "we", "i",
-    }
-    invented = [w for w in invented if w.lower() not in _common]
+    allowed_names = set()
+    for p in context.get("people", []):
+        if isinstance(p, dict) and "name" in p:
+            n = str(p["name"]).strip().lower()
+            if n:
+                allowed_names.add(n)
+                for part in n.split():
+                    if len(part) > 1:
+                        allowed_names.add(part)
+        elif isinstance(p, str):
+            n = p.strip().lower()
+            if n:
+                allowed_names.add(n)
+                for part in n.split():
+                    if len(part) > 1:
+                        allowed_names.add(part)
+
+    era_info = context.get("era", {}) if isinstance(context.get("era"), dict) else {}
+    exempt_texts = [
+        str(context.get("city", "")),
+        str(context.get("country", "")),
+        str(era_info.get("city", "")),
+        str(era_info.get("country", "")),
+        str(context.get("setting", "")),
+        str(context.get("target_final_image", "")),
+        str(memory.get("target_final_image", "")),
+    ]
+    if isinstance(context.get("blueprint"), dict):
+        bp = context["blueprint"]
+        exempt_texts.extend([
+            str(bp.get("setting", "")),
+            str(bp.get("target_final_image", "")),
+            str(bp.get("scene_type", "")),
+        ])
+
+    context_words = set()
+    for txt in exempt_texts:
+        for w in re.findall(r"\b[A-Za-z]+\b", txt):
+            context_words.add(w.lower())
+
+    obvious_persons = []
+    borderline = []
+
+    for m in re.finditer(r"\b([A-Z][a-z]+)\b", text):
+        word = m.group(1)
+        w_lower = word.lower()
+        if w_lower in allowed_names or w_lower in context_words:
+            continue
+
+        preceding = text[:m.start()].rstrip()
+        is_sentence_start = not preceding or bool(re.search(r"[.!?\n]['\"]?\s*$", preceding))
+
+        if w_lower in _COMMON_TITLE_WORDS:
+            continue
+
+        # Check person context around word
+        pre_tokens = [re.sub(r"[^a-z]", "", t.lower()) for t in text[:m.start()].split()[-2:]]
+        post_tokens = [re.sub(r"[^a-z]", "", t.lower()) for t in text[m.end():].split()[:2]]
+
+        is_pre_marked = any(t in _PERSON_PRE_MARKERS for t in pre_tokens)
+        is_post_marked = any(t in _PERSON_POST_MARKERS for t in post_tokens)
+        is_known_name = w_lower in _COMMON_PERSON_NAMES
+
+        if is_known_name or is_pre_marked or is_post_marked:
+            obvious_persons.append(word)
+        elif not is_sentence_start:
+            borderline.append(word)
+
+    if obvious_persons:
+        c3_passed = False
+        c3_msg = f"possible invented name(s): {obvious_persons[:5]}"
+    elif borderline:
+        c3_passed = True
+        c3_msg = f"warning: potential entity or location: {borderline[:5]}"
+    else:
+        c3_passed = True
+        c3_msg = "no unapproved proper names detected"
+
     results.append(ConstraintResult(
         constraint_id="C3",
-        passed=not invented,
-        message=(
-            f"possible invented name(s): {invented[:5]}" if invented
-            else "no unapproved proper names detected"
-        ),
+        passed=c3_passed,
+        message=c3_msg,
     ))
 
     # ---- C4: PLAUSIBLE DENIABILITY -----------------------------------------
