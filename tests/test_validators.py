@@ -51,3 +51,31 @@ def test_validate_c3_fails_when_invented_name_passed():
     assert c3_results
     assert any(not r.passed for r in c3_results)
     assert any("Suresh" in r.message for r in c3_results if not r.passed)
+
+def test_validate_c4_passes_with_said():
+    context = {"people": [{"name": "Friend A"}]}
+    memory = {
+        "memory_text": "Friend A said we should wait by the station until five in the evening.",
+        "why_this_is_false": "fictional",
+        "rationale": "bridge",
+        "constraints_satisfied": [],
+    }
+    results = validate(memory, context)
+    c4_results = [r for r in results if r.constraint_id == "C4"]
+    assert c4_results
+    assert all(r.passed for r in c4_results)
+
+
+def test_validate_c4_fails_with_as_an_ai():
+    context = {"people": [{"name": "Friend A"}]}
+    memory = {
+        "memory_text": "As an AI, I cannot recall whether we met in March 2012.",
+        "why_this_is_false": "fictional",
+        "rationale": "bridge",
+        "constraints_satisfied": [],
+    }
+    results = validate(memory, context)
+    c4_results = [r for r in results if r.constraint_id == "C4"]
+    assert c4_results
+    assert any(not r.passed for r in c4_results)
+
