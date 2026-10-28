@@ -197,7 +197,7 @@ class TestPostWipe:
         # Wipe
         client.post("/data/wipe", json={"confirm": True})
 
-        # DB is re-initialised inside wipe_db(); memories should be gone
+        # Memories should be gone
         assert len(client.get("/timeline").json()["saved_memories"]) == 0
 
     def test_wipe_returns_correct_row_count(self, client):
@@ -205,3 +205,17 @@ class TestPostWipe:
         client.post("/memories/generate", json={})
         r = client.post("/data/wipe", json={"confirm": True})
         assert r.json()["rows_deleted"] == 2
+
+    def test_wipe_deletes_database_file_from_disk(self, client):
+        import apophenic_memory.db.database as db_mod
+
+        # Ensure a memory was saved so the database file exists on disk
+        client.post("/memories/generate", json={})
+        assert db_mod._DB_PATH.exists()
+
+        # Perform panic wipe
+        r = client.post("/data/wipe", json={"confirm": True})
+        assert r.status_code == 200
+
+        # Assert output/apophenic.db no longer exists on disk
+        assert not db_mod._DB_PATH.exists()

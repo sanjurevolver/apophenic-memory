@@ -21,8 +21,9 @@ src/apophenic_memory/liar/generator.py
 src/apophenic_memory/liar/prompts/v2.txt
 src/apophenic_memory/liar/prompts/v3.txt
 *.log
-output/*.png
-output/*.jpg
+
+# Generated outputs & databases — strictly ignored
+output/
 
 # Secrets
 .env
@@ -36,6 +37,3 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
-
-output/*.db
-output/*.db-*

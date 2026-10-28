@@ -5,6 +5,8 @@ Apophenic Memory set out to build a system that fabricates plausible false memor
 
 However, the live evaluation revealed a critical ceiling: **Llama 3.1 8B produces structurally valid but creatively flat memories.** The system can satisfy all constraints, but it cannot reliably produce the "uncanny" specificity required to make a fabricated memory feel indistinguishable from a real diary entry.
 
+*Note on Model Alignment in the Final Prototype:* While `llama3.1:8b` was used during the initial failure trail and qualitative evaluation, the final prototype uses `llama3.2:3b` for generation to ensure practical generation speed on CPU.
+
 ## 2. The Failure Trail (Architecture vs. Capacity)
 The project went through four distinct prompt iterations. Each iteration fixed one failure mode, only to expose another:
 
@@ -26,3 +28,14 @@ Despite the creative limitations of the 8B model, the project proves the viabili
 When a user reads a fabricated memory and toggles the Red Pill to see exactly *why* the AI chose that specific lie, the uncanny valley is achieved not through literary prose, but through the transparency of the fabrication mechanism itself. 
 
 Future iterations will explore whether 14B or 70B models can overcome the capacity limit without sacrificing the local-first privacy architecture, or whether the image layer (SDXL) can provide the visceral "uncanny" detail that the text model cannot.
+
+## 5. Model Alignment: Llama 3.1 8B vs. Llama 3.2 3B in the Final Prototype
+While `llama3.1:8b` was used throughout the initial prompt exploration and failure trail documented above to analyze small-model capacity limits, the final interactive prototype defaults to `llama3.2:3b`.
+
+This decision was driven by consumer accessibility and local CPU generation latency:
+- **Generation Latency:** On standard consumer laptops without discrete GPUs, 8B models require 8–15 minutes per generation pass with retries, making interactive exploration via the Red Pill UI impractical. `llama3.2:3b` generates responses in ~2–3 minutes on CPU.
+- **Architectural Compensation:** The two-stage architecture (scene selector → blueprint → writer) paired with deterministic Python validators (`validate_era`, `validate_closing`, `validate_diversity`) compensates for the reduced model parameter size by enforcing hard chronological and narrative boundaries in code rather than relying purely on model self-attention.
+- **Setup Command:** Developers and users running the final prototype should pull `llama3.2:3b`:
+  ```bash
+  ollama pull llama3.2:3b
+  ```
