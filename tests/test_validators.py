@@ -121,3 +121,63 @@ def test_validate_c3_sentence_start_common_words_pass():
     assert c3_results
     assert all(r.passed for r in c3_results)
 
+# ---------------------------------------------------------------------------
+# Specific regression tests for C4 false-positives and C3 name heuristics
+# ---------------------------------------------------------------------------
+
+def test_c4_ignores_substrings():
+    context = {"people": [{"name": "Friend A"}]}
+    memory = {
+        "memory_text": "Friend A said we should wait by the station until five in the evening.",
+        "why_this_is_false": "fictional",
+        "rationale": "bridge",
+        "constraints_satisfied": [],
+    }
+    results = validate(memory, context)
+    c4_results = [r for r in results if r.constraint_id == "C4"]
+    assert c4_results
+    assert all(r.passed for r in c4_results)
+
+
+def test_c4_catches_ai_leakage():
+    context = {"people": [{"name": "Friend A"}]}
+    memory = {
+        "memory_text": "As an AI, I cannot recall whether we met in March 2012.",
+        "why_this_is_false": "fictional",
+        "rationale": "bridge",
+        "constraints_satisfied": [],
+    }
+    results = validate(memory, context)
+    c4_results = [r for r in results if r.constraint_id == "C4"]
+    assert c4_results
+    assert any(not r.passed for r in c4_results)
+
+
+def test_c3_ignores_common_capitalized_words():
+    context = {"people": [{"name": "Friend A"}]}
+    memory = {
+        "memory_text": "Second attempts are always harder. We read Chapter three together in Hometown library with Friend A.",
+        "why_this_is_false": "fictional",
+        "rationale": "bridge",
+        "constraints_satisfied": [],
+    }
+    results = validate(memory, context)
+    c3_results = [r for r in results if r.constraint_id == "C3"]
+    assert c3_results
+    assert all(r.passed for r in c3_results)
+
+
+def test_c3_catches_unapproved_names():
+    context = {"people": [{"name": "Friend A"}]}
+    memory = {
+        "memory_text": "I walked to the corner with John and Priya to pick up some groceries.",
+        "why_this_is_false": "fictional",
+        "rationale": "bridge",
+        "constraints_satisfied": [],
+    }
+    results = validate(memory, context)
+    c3_results = [r for r in results if r.constraint_id == "C3"]
+    assert c3_results
+    assert any(not r.passed for r in c3_results)
+    assert any("John" in r.message or "Priya" in r.message for r in c3_results if not r.passed)
+

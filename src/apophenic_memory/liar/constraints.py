@@ -48,7 +48,7 @@ _C4_META = [
     "fake",
     "this never happened",
 ]
-_C4_AI_REGEX = re.compile(r"\bai\b|\ba\.i\.(?!\w)", re.IGNORECASE)
+_C4_AI_REGEX = re.compile(r"\bai\b|\ba\.i\.(?!\w)|\bas an ai\b", re.IGNORECASE)
 
 # C3: Common title words and grammar exempt from person checking
 _COMMON_TITLE_WORDS = {
@@ -72,7 +72,7 @@ _COMMON_TITLE_WORDS = {
     "hall", "room", "floor", "building", "gate", "block", "house", "shop", "stall",
     "corner", "center", "centre", "bridge", "park", "garden", "lake", "river",
     "hostel", "canteen", "cafe", "coffee", "tea", "hotel", "city", "town", "college",
-    "university", "school", "class", "classroom", "kitchen", "bus", "train", "taxi",
+    "university", "school", "class", "classroom", "kitchen", "bus", "train", "taxi", "chapter",
 }
 
 _COMMON_PERSON_NAMES = {
@@ -379,10 +379,10 @@ def validate(memory: dict, context: dict) -> list[ConstraintResult]:
     ))
 
     # ---- C4: PLAUSIBLE DENIABILITY -----------------------------------------
-    hedge_hits = [h for h in _C4_HEDGES if h in text_lower]
-    meta_hits = [m for m in _C4_META if m in text_lower]
+    hedge_hits = [h for h in _C4_HEDGES if re.search(rf"\b{re.escape(h)}\b", text_lower)]
+    meta_hits = [m for m in _C4_META if re.search(rf"\b{re.escape(m)}\b", text_lower)]
     ai_hits = [m.group(0) for m in _C4_AI_REGEX.finditer(text)]
-    c4_fails = hedge_hits + meta_hits + ai_hits
+    c4_fails = list(dict.fromkeys(hedge_hits + meta_hits + ai_hits))
     results.append(ConstraintResult(
         constraint_id="C4",
         passed=not c4_fails,
