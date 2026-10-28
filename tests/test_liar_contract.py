@@ -5,6 +5,7 @@ from apophenic_memory.liar.constraints import (
     validate,
     validate_closing,
     validate_contract,
+    validate_era,
 )
 
 
@@ -48,37 +49,37 @@ def test_validate_rejects_emotional_final_sentence():
         "constraints_satisfied": ["C1", "C2", "C2b", "C3", "C4", "C5", "C6"],
     }
 
-    ok, failures = validate(memory, {})
+    # validate() now returns list[ConstraintResult]
+    results = validate(memory, {})
 
-    assert not ok
-    assert any("final sentence contains emotion markers" in failure for failure in failures)
+    failed = [r for r in results if not r.passed]
+    assert failed, "expected at least one failing constraint"
+    assert any(
+        "final sentence contains emotion markers" in r.message for r in failed
+    )
 
-    ok2, failures2 = validate_closing(memory)
-    assert not ok2
-    assert failures2
+    # validate_closing() also returns list[ConstraintResult]
+    closing_results = validate_closing(memory)
+    assert any(not r.passed for r in closing_results)
+    assert any("final sentence contains emotion markers" in r.message for r in closing_results)
 
 
 def test_validate_era_detects_anachronism():
-    from apophenic_memory.liar.constraints import validate_era
-
     context = {"era": {"year": 2012}}
 
     valid_memory = {"memory_text": "I walked around the market in March 2012 with Friend A."}
-    ok, failures = validate_era(valid_memory, context)
-    assert ok is True
-    assert failures == []
+    results = validate_era(valid_memory, context)
+    assert all(r.passed for r in results), "expected no failures for a correct year"
 
     anachronistic_memory = {"memory_text": "I bought a 2017 recipe book and cooked with Friend A in 2012."}
-    ok, failures = validate_era(anachronistic_memory, context)
-    assert ok is False
-    assert any("anachronism: found year 2017, expected 2012" in f for f in failures)
+    results2 = validate_era(anachronistic_memory, context)
+    failed = [r for r in results2 if not r.passed]
+    assert failed, "expected an era failure"
+    assert any("2017" in r.message for r in failed)
 
 
 def test_validate_era_no_year_in_text():
-    from apophenic_memory.liar.constraints import validate_era
-
     context = {"era": {"year": 2012}}
     memory = {"memory_text": "I walked through the market with Friend A on a Tuesday afternoon."}
-    ok, failures = validate_era(memory, context)
-    assert ok is True
-    assert failures == []
+    results = validate_era(memory, context)
+    assert all(r.passed for r in results)
