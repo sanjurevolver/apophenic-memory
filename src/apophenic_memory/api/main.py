@@ -146,20 +146,28 @@ def post_generate(body: GenerateRequest) -> dict:
 
 @app.post("/data/wipe")
 def post_wipe(body: WipeRequest) -> dict:
-    """Wipe all persisted memories.
+    """Destructively wipe all persisted memories and output files.
 
-    Requires ``{"confirm": true}`` in the request body.
-    Returns 400 if confirm is False.
+    Requires ``{"confirm": true}`` in the request body — returns 400 otherwise.
+
+    Internally calls ``wipe_db()`` which:
+    - counts existing rows,
+    - deletes the entire ``output/`` directory (db file + any sidecar files),
+    - recreates the empty directory,
+    - re-initialises a fresh schema-ready database.
+
+    The app is ready to accept new requests immediately after this returns.
     """
     if not body.confirm:
         raise HTTPException(
             status_code=400,
-            detail="Wipe not confirmed. Send {\"confirm\": true} to proceed.",
+            detail='Wipe not confirmed. Send {"confirm": true} to proceed.',
         )
 
-    rows_deleted = wipe_db()
+    rows_deleted = wipe_db()  # wipe_db() calls init_db() internally — no crash risk
+
     return {
         "status": "wiped",
         "rows_deleted": rows_deleted,
-        "message": "All data wiped. Please refresh the page.",
+        "message": "All data wiped. Output directory destroyed and re-initialised. Please refresh the page.",
     }

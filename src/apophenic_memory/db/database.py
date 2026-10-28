@@ -6,12 +6,16 @@ without side-effects; call init_db() explicitly at startup.
 """
 from __future__ import annotations
 
+import gc
+import os
+import shutil
 import sqlite3
 from pathlib import Path
 
 # Resolve project root relative to this file: db/ -> apophenic_memory/ -> src/ -> project/
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
-_DB_PATH = _PROJECT_ROOT / "output" / "apophenic.db"
+_OUTPUT_DIR = _PROJECT_ROOT / "output"
+_DB_PATH = _OUTPUT_DIR / "apophenic.db"
 
 
 def _connect() -> sqlite3.Connection:
@@ -77,9 +81,71 @@ def get_memories() -> list[dict]:
     return [dict(row) for row in rows]
 
 
+def _force_remove(path: Path) -> None:
+    """Remove a single file, ignoring errors (used as rmtree error handler)."""
+    try:
+        os.remove(path)
+    except OSError:
+        pass
+
+
 def wipe_db() -> int:
-    """Delete every row from the memories table. Returns the row count removed."""
-    with _connect() as conn:
-        cursor = conn.execute("DELETE FROM memories")
-        conn.commit()
-        return cursor.rowcount
+    """Destructively wipe the entire output directory and re-initialise a fresh database.
+
+    Steps:
+    1. Count how many memory rows exist (for the return value).
+    2. Explicitly close the SQLite connection so Windows releases the file lock.
+    3. Delete the .db file (and WAL/SHM sidecar files) directly with os.remove
+       before calling shutil.rmtree on the rest of the output directory — this
+       avoids the WinError 32 "file in use" error that rmtree raises on Windows
+       when the SQLite file is still locked after close().
+    4. Delete any remaining files in output/ with rmtree.
+    5. Recreate the empty output/ directory.
+    6. Call init_db() so the next request finds a clean, schema-ready database.
+
+    Returns the number of rows that were present before the wipe.
+    """
+    # 1. Count rows — use an explicit connection so we can call .close() ourselves.
+    #    Switch to DELETE journal mode first so SQLite flushes the WAL and removes
+    #    the -wal / -shm sidecar files before we close — this is the only reliable
+    #    way to ensure the .db file is fully self-contained when we delete it on
+    #    Windows (which keeps a file lock until all WAL pages are checkpointed).
+    row_count = 0
+    if _DB_PATH.exists():
+        conn = None
+        try:
+            conn = _connect()
+            conn.execute("PRAGMA journal_mode=DELETE")  # flushes WAL, removes -wal/-shm
+            conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            row_count = conn.execute("SELECT COUNT(*) FROM memories").fetchone()[0]
+        except Exception:
+            row_count = 0
+        finally:
+            if conn is not None:
+                conn.close()
+                conn = None
+                gc.collect()  # force CPython to release Windows file handle immediately
+
+    # 2. Delete the db file and its WAL/SHM companions explicitly first.
+    #    On Windows, rmtree fails with WinError 32 if the file is still locked,
+    #    but os.remove succeeds because SQLite releases the lock on close().
+    for db_related in (_DB_PATH,
+                       _DB_PATH.with_suffix(".db-wal"),
+                       _DB_PATH.with_suffix(".db-shm")):
+        if db_related.exists():
+            try:
+                os.remove(db_related)
+            except OSError:
+                pass  # best-effort; rmtree will retry below
+
+    # 3. Blow away everything else in the output directory.
+    if _OUTPUT_DIR.exists():
+        shutil.rmtree(_OUTPUT_DIR, onerror=lambda _fn, path, _exc: _force_remove(Path(path)))
+
+    # 4. Recreate the empty directory.
+    _OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    # 5. Re-initialise a fresh, schema-ready database so the app keeps running.
+    init_db()
+
+    return row_count
