@@ -51,7 +51,11 @@ def save_memory(memory_data: dict) -> None:
     Expected keys: id, gap_start, gap_end, memory_text,
                    why_this_is_false, rationale.
     Silently ignores duplicate ids (INSERT OR IGNORE).
+    Ensures table exists before insertion if database was wiped.
     """
+    if not _DB_PATH.exists():
+        init_db()
+
     with _connect() as conn:
         conn.execute(
             """
@@ -74,6 +78,8 @@ def save_memory(memory_data: dict) -> None:
 
 def get_memories() -> list[dict]:
     """Return all saved memories as a list of plain dicts, newest first."""
+    if not _DB_PATH.exists():
+        return []
     with _connect() as conn:
         rows = conn.execute(
             "SELECT * FROM memories ORDER BY created_at DESC"
@@ -90,18 +96,17 @@ def _force_remove(path: Path) -> None:
 
 
 def wipe_db() -> int:
-    """Destructively wipe the entire output directory and re-initialise a fresh database.
+    """Destructively wipe the entire output directory and delete the database file from disk.
 
     Steps:
     1. Count how many memory rows exist (for the return value).
-    2. Explicitly close the SQLite connection so Windows releases the file lock.
+    2. Explicitly close the SQLite connection and force GC so Windows releases the file lock.
     3. Delete the .db file (and WAL/SHM sidecar files) directly with os.remove
        before calling shutil.rmtree on the rest of the output directory — this
        avoids the WinError 32 "file in use" error that rmtree raises on Windows
        when the SQLite file is still locked after close().
     4. Delete any remaining files in output/ with rmtree.
-    5. Recreate the empty output/ directory.
-    6. Call init_db() so the next request finds a clean, schema-ready database.
+    5. Recreate the empty output/ directory without recreating the database file.
 
     Returns the number of rows that were present before the wipe.
     """
@@ -144,8 +149,5 @@ def wipe_db() -> int:
 
     # 4. Recreate the empty directory.
     _OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
-    # 5. Re-initialise a fresh, schema-ready database so the app keeps running.
-    init_db()
 
     return row_count

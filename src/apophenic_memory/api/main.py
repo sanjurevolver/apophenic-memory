@@ -146,17 +146,15 @@ def post_generate(body: GenerateRequest) -> dict:
 
 @app.post("/data/wipe")
 def post_wipe(body: WipeRequest) -> dict:
-    """Destructively wipe all persisted memories and output files.
+    """Destructively wipe all persisted memories and output files from disk.
 
     Requires ``{"confirm": true}`` in the request body — returns 400 otherwise.
 
     Internally calls ``wipe_db()`` which:
     - counts existing rows,
-    - deletes the entire ``output/`` directory (db file + any sidecar files),
-    - recreates the empty directory,
-    - re-initialises a fresh schema-ready database.
-
-    The app is ready to accept new requests immediately after this returns.
+    - deletes output/apophenic.db from disk,
+    - deletes any sidecar or temporary files in output/,
+    - leaves the output/ directory empty and clean.
     """
     if not body.confirm:
         raise HTTPException(
@@ -164,10 +162,20 @@ def post_wipe(body: WipeRequest) -> dict:
             detail='Wipe not confirmed. Send {"confirm": true} to proceed.',
         )
 
-    rows_deleted = wipe_db()  # wipe_db() calls init_db() internally — no crash risk
+    rows_deleted = wipe_db()
 
     return {
         "status": "wiped",
         "rows_deleted": rows_deleted,
-        "message": "All data wiped. Output directory destroyed and re-initialised. Please refresh the page.",
+        "message": "All data wiped. Database file and output files deleted. Please refresh the page.",
     }
+
+
+def run_server(host: str = "127.0.0.1", port: int = 8000, reload: bool = True) -> None:
+    """Run the local FastAPI server bound strictly to localhost (127.0.0.1)."""
+    import uvicorn
+    uvicorn.run("apophenic_memory.api.main:app", host=host, port=port, reload=reload)
+
+
+if __name__ == "__main__":
+    run_server()

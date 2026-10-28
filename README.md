@@ -7,12 +7,14 @@
 ## Project status
 
 **Week 1 complete.** The ingest, timeline, gap detection, and static gallery
-are working. The liar layer is frozen: Llama 3.1 8B produces structurally
-valid but creatively flat fabricated memories. See `EVALUATION.md` (TODO) for
-the honest assessment.
+are working. The liar layer was initially evaluated with Llama 3.1 8B, which
+produced structurally valid but creatively flat fabricated memories. See
+`EVALUATION.md` for the honest assessment.
 
 **Week 2 complete.** The FastAPI backend and dynamic frontend are working.
-Users can generate a memory live in the browser via the Red Pill UI.
+Users can generate a memory live in the browser via the Red Pill UI. The final
+prototype uses `llama3.2:3b` for generation (note that `llama3.1:8b` was used during
+the initial failure trail, but the final prototype uses 3b for CPU speed).
 
 The prototype is not privacy-hardened. Do not run it on real personal data.
 
@@ -65,6 +67,11 @@ A "panic wipe" button deletes all generated content and the SQLite database.
 ---
 
 ## The failure trail (read this before touching the prompts)
+
+> [!NOTE]
+> **Model Alignment:** The failure trail below documents our findings using
+> `llama3.1:8b`. The final prototype uses `llama3.2:3b` for fast, accessible local
+> generation on consumer CPUs without requiring a dedicated GPU.
 
 This project has gone through four prompt iterations. Each iteration fixed one
 failure mode and exposed another. This trail is documented so the next
@@ -153,33 +160,36 @@ apophenic-memory/
 ├── src/
 │   └── apophenic_memory/
 │       ├── api/
-│       │   └── main.py                 ← FastAPI routes (/timeline, /generate, /)
+│       │   └── main.py                 ← FastAPI routes (/timeline, /memories/generate, /data/wipe)
+│       ├── db/
+│       │   └── database.py             ← SQLite persistence layer & destructive wipe
 │       ├── ingest/                     ← (Week 1) diary/photo/people parsers
 │       ├── gap_mapper/                 ← (Week 1) gap detection
 │       └── liar/
-│           ├── schema.py               ← frozen boundary: Memory, GenerationResult
-│           ├── constraints.py          ← deterministic validators (C1–C6, closing, diversity)
+│           ├── schema.py               ← frozen boundary: Memory, GenerationResult, ConstraintResult
+│           ├── constraints.py          ← deterministic validators (C1–C6, closing, diversity, era)
 │           ├── generator.py            ← local-only stub rotation (contains private examples; excluded from public snapshot)
-│           ├── two_stage.py            ← stage 1 → blueprint → stage 2 pipeline
+│           ├── two_stage.py            ← stage 1 → blueprint → stage 2 pipeline (default: llama3.2:3b)
 │           └── prompts/
 │               ├── v2.txt              ← local-only archived prompt (excluded from public snapshot)
 │               ├── v3.txt              ← local-only archived prompt (excluded from public snapshot)
 │               ├── stage1_scene_selector.txt
 │               └── stage2_writer.txt
 ├── tests/
+│   ├── test_api.py                     ← FastAPI integration tests (TestClient, isolated db)
+│   ├── test_validators.py              ← unit tests for era, closing, and C3 validators
 │   ├── test_liar_contract.py           ← JSON + closing validators
-│   ├── test_two_stage.py               ← pipeline wiring (uses fixture blueprint)
-│   └── test_stub_swap.py               ← (to write) schema boundary invariance
+│   └── test_two_stage.py               ← pipeline wiring (uses fixture blueprint)
 ├── test_data/
 │   ├── gap_2012_03.json                ← the real test gap
 │   ├── entries_before.md
 │   ├── entries_after.md
 │   ├── people.json
 │   ├── v2_prompt_results.md            ← archived scorecards
-│   └── two_stage_run_results.md        ← current scorecard (fill this in)
+│   └── two_stage_run_results.md        ← current scorecard
 ├── static/
-│   └── index.html                      ← dynamic frontend with Red Pill UI
-└── output/                             ← gitignored, generated memories
+│   └── index.html                      ← dynamic frontend with Red Pill UI & constraint audit
+└── output/                             ← strictly gitignored, generated memories & SQLite database
 ```
 
 ---
@@ -189,7 +199,7 @@ apophenic-memory/
 **Prerequisites:**
 - Python 3.10+
 - [Ollama](https://ollama.com) with `llama3.2:3b` pulled
-- 8 GB VRAM (or CPU-only, slower)
+- 8 GB RAM (runs locally on CPU)
 
 ```bash
 # Clone
@@ -199,7 +209,7 @@ cd apophenic-memory
 # Python environment
 python -m venv .venv
 source .venv/bin/activate         # Windows: .venv\Scripts\activate
-pip install -e .
+pip install -e ".[dev]"
 
 # Pull the model
 ollama pull llama3.2:3b
@@ -207,8 +217,9 @@ ollama pull llama3.2:3b
 # Run the tests (no model needed)
 pytest -q
 
-# Run the interactive API & frontend server
-uvicorn apophenic_memory.api.main:app --reload
+# Run the interactive API & frontend server (bound to 127.0.0.1 by default)
+uvicorn apophenic_memory.api.main:app --host 127.0.0.1 --port 8000 --reload
+# or: python -m apophenic_memory.api.main
 
 # Run a single two-stage generation (needs Ollama running)
 python scripts/run_two_stage_batch.py
@@ -381,9 +392,9 @@ improvement.
 - [ ] **Stage 1 blueprint fix:** reject emotion/state in `target_final_image`
 - [ ] **First passing batch:** ≥2/3 word-count hits, ≥1/3 uncanny 4+
 - [x] **Week 1:** ingest + timeline + stub generator + Red Pill UI
-- [ ] **Week 2:** FastAPI backend, interactive generation, image layer
+- [x] **Week 2:** FastAPI backend, interactive generation, SQLite persistence, panic wipe
 - [ ] **Week 3:** era-matched image generation
-- [ ] **Week 4:** privacy hardening (consent, panic wipe, sidecar flags)
+- [x] **Week 4 (privacy hardening):** consent modal, local 127.0.0.1 binding, destructive panic wipe
 - [ ] **Week 5:** blind evaluation with 3–5 users
 - [ ] **Week 6:** ship
 
