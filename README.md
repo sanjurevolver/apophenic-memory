@@ -317,24 +317,6 @@ UI integration. **If <2/3:** do not iterate further on prompt wording. Either
 document a wider length tolerance (honest surrender) or upgrade stage 2 to
 `qwen2.5:14b` / `llama3.1:70b`.
 
----
-
-## Scorecard (fill this in after every batch)
-
-| Run | Blueprint valid | Scene type | Final image concrete | Word count hit | Uncanny (1–5) | Notes |
-|---|---|---|---|---|---|---|
-| 1 | | | | | | |
-| 2 | | | | | | |
-| 3 | | | | | | |
-
-**Decision rules:**
-- **≥2/3 hit word count AND ≥1/3 score 4+ uncanny** → freeze, start UI integration
-- **≥2/3 hit word count BUT 0/3 score 4+** → stage-2 voice problem, one focused iteration
-- **<2/3 hit word count** → do not iterate prompts; widen tolerance or upgrade model
-- **Any blueprint invalid** → fix stage-1 prompt with good/bad examples, re-run
-
----
-
 ## What has been proven, and what has not
 
 **Proven:**
