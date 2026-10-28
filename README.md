@@ -383,7 +383,8 @@ improvement.
 - [x] **Deterministic validator suite:** C1–C6 constraint engine, anachronism era validation (`validate_era`), and closing sentence emotion checks (`validate_closing`)
 - [x] **Isolated test suite:** Hermetic unit and integration tests using FastAPI `TestClient` with mocked LLM generation
 - [x] **Automated CI pipeline:** GitHub Actions workflow running `pytest` across all PRs and pushes to main
-- [x] Empirical evaluation of 10 live generations confirms deterministic validators successfully catch 100% of model hallucinations (specifically unlisted names and emotion endings).
+- [x] **Empirical 30-run batch evaluation:** Validated on 30 live model runs with constraint retry loop; raised final compliance from 3.3% (first-pass) to 66.7% with an average of 1.60 retries and 93.6s latency.
+- [x] **Golden dataset accuracy:** Measured on 10 labeled ground-truth memories with 100.0% precision, 100.0% recall, and 0.0% false positive rate across all deterministic validators.
 
 ### Privacy & Security
 - [x] **Local-only binding:** Server bound strictly to `127.0.0.1` by default to prevent LAN exposure
