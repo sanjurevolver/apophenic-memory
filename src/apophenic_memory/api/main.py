@@ -39,7 +39,7 @@ class WipeRequest(BaseModel):
 
     Must include ``{"confirm": true}`` — any other value returns 400.
     """
-    confirm: bool
+    confirm: bool = False
 
 
 # ---------------------------------------------------------------------------
