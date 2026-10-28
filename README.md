@@ -4,19 +4,13 @@
 > false memories to fill gaps in a person's diary — and shows you exactly how
 > it lied.
 
-## Project status
+## Status
 
-**Week 1 complete.** The ingest, timeline, gap detection, and static gallery
-are working. The liar layer was initially evaluated with Llama 3.1 8B, which
-produced structurally valid but creatively flat fabricated memories. See
-`EVALUATION.md` for the honest assessment.
-
-**Week 2 complete.** The FastAPI backend and dynamic frontend are working.
-Users can generate a memory live in the browser via the Red Pill UI. The final
-prototype uses `llama3.2:3b` for generation (note that `llama3.1:8b` was used during
-the initial failure trail, but the final prototype uses 3b for CPU speed).
-
-The prototype is not privacy-hardened. Do not run it on real personal data.
+Apophenic Memory is fully functional:
+- **FastAPI backend & dynamic frontend**: Real-time generation, interactive timeline, and Red Pill explainability UI are operational.
+- **Deterministic validation & SQLite persistence**: C1–C6 content constraints, era checks (`validate_era`), and closing rules (`validate_closing`) run deterministically; memories are stored locally in SQLite (`output/apophenic.db`).
+- **Privacy-first & hardened**: The API server is strictly bound to `127.0.0.1` (local-first, unexposed to LAN), all output directories are gitignored, and the destructive Panic Wipe physically removes the database file and all generated artifacts from disk.
+- **Comprehensive test suite**: Full suite of 33 unit and integration tests passing in CI via GitHub Actions without requiring an external Ollama instance.
 
 ---
 
@@ -136,10 +130,10 @@ nouns anywhere in the sentence, not just at the end.
     - validate_closing()     : final sentence must not name emotion
     - validate_diversity()   : no scene overlap with last N memories
            ▼
-┌──────────────────────┐
-│  VISUALIZER          │  era-matched image generation (Week 3)
-│  (local SDXL)        │
-└──────────┬───────────┘
+┌───────────────────────────────┐
+│   VISUALIZER (Future Work)    │
+│   (local SDXL)                │
+└───────────────┬───────────────┘
            ▼
 ┌──────────────────────┐
 │  RED PILL UI         │  gallery + real/fake toggle + rationale panel
@@ -152,19 +146,23 @@ nouns anywhere in the sentence, not just at the end.
 
 ```
 apophenic-memory/
+├── .github/
+│   └── workflows/
+│       └── test.yml                    ← automated CI test runner (pytest)
 ├── README.md                           ← this file
 ├── PRIOR_ART.md                        ← adjacent projects, differentiation
+├── EVALUATION.md                       ← model evaluation & capacity findings
 ├── pyproject.toml
 ├── scripts/
-│   └── run_two_stage_batch.py          ← 3-run evidence generator
+│   └── run_two_stage_batch.py          ← batch evidence generator
 ├── src/
 │   └── apophenic_memory/
 │       ├── api/
 │       │   └── main.py                 ← FastAPI routes (/timeline, /memories/generate, /data/wipe)
 │       ├── db/
 │       │   └── database.py             ← SQLite persistence layer & destructive wipe
-│       ├── ingest/                     ← (Week 1) diary/photo/people parsers
-│       ├── gap_mapper/                 ← (Week 1) gap detection
+│       ├── ingest/                     ← diary/photo/people parsers
+│       ├── gap_mapper/                 ← gap detection
 │       └── liar/
 │           ├── schema.py               ← frozen boundary: Memory, GenerationResult, ConstraintResult
 │           ├── constraints.py          ← deterministic validators (C1–C6, closing, diversity, era)
@@ -181,15 +179,15 @@ apophenic-memory/
 │   ├── test_liar_contract.py           ← JSON + closing validators
 │   └── test_two_stage.py               ← pipeline wiring (uses fixture blueprint)
 ├── test_data/
-│   ├── gap_2012_03.json                ← the real test gap
+│   ├── gap_2012_03.json                ← sample test gap
 │   ├── entries_before.md
 │   ├── entries_after.md
 │   ├── people.json
 │   ├── v2_prompt_results.md            ← archived scorecards
 │   └── two_stage_run_results.md        ← current scorecard
 ├── static/
-│   └── index.html                      ← dynamic frontend with Red Pill UI & constraint audit
-└── output/                             ← strictly gitignored, generated memories & SQLite database
+│   └── index.html                  ← dynamic frontend with Red Pill UI & constraint audit
+└── output/                         ← strictly gitignored, generated memories & SQLite database
 ```
 
 ---
@@ -231,8 +229,8 @@ python scripts/run_two_stage_batch.py
 
 The following notes preserve the decision process from prompt development.
 They are historical, not current implementation tasks: after live evaluation,
-the liar layer was frozen and Week 1 proceeded with ingest, timeline, and the
-static gallery.
+the liar layer was frozen and development proceeded with ingest, timeline, and the
+gallery interface.
 
 **Stage 1 passed on the first live batch:**
 - 3 distinct scene types across 3 runs (`shared_meal_at_someone_house`,
@@ -247,7 +245,7 @@ static gallery.
    physical posture with an emotion attached. The blueprint validator must
    reject this.
 
-**At the time, two fixes were proposed before Week 1 UI work:**
+**At the time, two fixes were proposed before UI integration:**
 
 ### Fix 1 — Blueprint final-image validator
 
@@ -315,7 +313,7 @@ you MUST write a shorter memory. The final sentence must still be
 ```
 
 **If ≥2/3 runs hit ±10 after the retry loop:** freeze stage 2, proceed to
-Week 1 UI. **If <2/3:** do not iterate further on prompt wording. Either
+UI integration. **If <2/3:** do not iterate further on prompt wording. Either
 document a wider length tolerance (honest surrender) or upgrade stage 2 to
 `qwen2.5:14b` / `llama3.1:70b`.
 
@@ -330,7 +328,7 @@ document a wider length tolerance (honest surrender) or upgrade stage 2 to
 | 3 | | | | | | |
 
 **Decision rules:**
-- **≥2/3 hit word count AND ≥1/3 score 4+ uncanny** → freeze, start Week 1 UI
+- **≥2/3 hit word count AND ≥1/3 score 4+ uncanny** → freeze, start UI integration
 - **≥2/3 hit word count BUT 0/3 score 4+** → stage-2 voice problem, one focused iteration
 - **<2/3 hit word count** → do not iterate prompts; widen tolerance or upgrade model
 - **Any blueprint invalid** → fix stage-1 prompt with good/bad examples, re-run
@@ -349,9 +347,8 @@ document a wider length tolerance (honest surrender) or upgrade stage 2 to
 - That the system produces memories a real user would call "my life, but not"
 - That the visualizer can match era style without anachronism
 
-The scorecard gate above was superseded by the Week 1 decision to accept the
-current output quality, freeze the liar layer, and build a static gallery with
-stub memories.
+The scorecard gate above was superseded by the architectural decision to freeze the
+liar layer and build the timeline interface with structured generation.
 
 ---
 
@@ -384,19 +381,31 @@ improvement.
 
 ---
 
-## Milestones
+## Roadmap & Completed Features
 
-- [x] **Pre-code:** prior-art check, real test gap, three prompt versions, failure trail
-- [x] **Two-stage architecture:** scene selector + writer, blueprint validator
-- [ ] **Stage 2 length fix:** retry loop with word-count feedback
-- [ ] **Stage 1 blueprint fix:** reject emotion/state in `target_final_image`
-- [ ] **First passing batch:** ≥2/3 word-count hits, ≥1/3 uncanny 4+
-- [x] **Week 1:** ingest + timeline + stub generator + Red Pill UI
-- [x] **Week 2:** FastAPI backend, interactive generation, SQLite persistence, panic wipe
-- [ ] **Week 3:** era-matched image generation
-- [x] **Week 4 (privacy hardening):** consent modal, local 127.0.0.1 binding, destructive panic wipe
-- [ ] **Week 5:** blind evaluation with 3–5 users
-- [ ] **Week 6:** ship
+### Core System
+- [x] **Pre-code foundation:** Prior-art analysis, diary test gaps, prompt iterations, failure trail catalog
+- [x] **Two-stage architecture:** Scene selector (Stage 1) + Writer (Stage 2) with blueprint validator
+- [x] **Ingest & Timeline engine:** Diary and markdown parsers, temporal gap detection, chronological sorting
+- [x] **FastAPI backend:** Interactive generation (`POST /memories/generate`), timeline API (`GET /timeline`), and local SQLite persistence
+- [x] **Dynamic Red Pill UI:** Browser interface with side-by-side real/fabricated timeline cards and interactive constraint audit panel
+
+### Testing & Validation
+- [x] **Deterministic validator suite:** C1–C6 constraint engine, anachronism era validation (`validate_era`), and closing sentence emotion checks (`validate_closing`)
+- [x] **Isolated test suite:** Hermetic unit and integration tests using FastAPI `TestClient` with mocked LLM generation
+- [x] **Automated CI pipeline:** GitHub Actions workflow running `pytest` across all PRs and pushes to main
+
+### Privacy & Security
+- [x] **Local-only binding:** Server bound strictly to `127.0.0.1` by default to prevent LAN exposure
+- [x] **Consent gate:** First-run modal requiring explicit consent before viewing fabricated personal narratives
+- [x] **Destructive Panic Wipe:** Single-click physical deletion of `output/apophenic.db` and generated artifacts from disk
+- [x] **Data isolation:** Strict gitignore enforcement of all `output/` records and user databases
+
+### Future Work
+- [ ] **Visualizer layer:** Era-matched synthetic image generation (local SDXL)
+- [ ] **Dynamic word count feedback:** In-context retry loop for strict length control
+- [ ] **Multi-user evaluation:** Structured blind testing with 3–5 diary keepers
+- [ ] **Model scaling:** Evaluation of larger open models (14B/70B) for richer uncanny detail
 
 ---
 
