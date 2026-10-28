@@ -185,6 +185,10 @@ apophenic-memory/
 │   ├── people.json
 │   ├── v2_prompt_results.md            ← archived scorecards
 │   └── two_stage_run_results.md        ← current scorecard
+├── scripts/
+│   ├── run_two_stage_batch.py      ← reproducible 10-run LLM evaluation harness
+│   ├── smoke_test.sh               ← clean-install smoke test (Linux / macOS / Bash)
+│   └── smoke_test.ps1              ← clean-install smoke test (Windows PowerShell)
 ├── static/
 │   └── index.html                  ← dynamic frontend with Red Pill UI & constraint audit
 └── output/                         ← strictly gitignored, generated memories & SQLite database
@@ -214,6 +218,9 @@ ollama pull llama3.2:3b
 
 # Run the tests (no model needed)
 pytest -q
+
+# Run the end-to-end clean-install smoke test (verifies server, generate, SQLite, and panic wipe)
+bash scripts/smoke_test.sh       # Windows: powershell -File scripts/smoke_test.ps1
 
 # Run the interactive API & frontend server (bound to 127.0.0.1 by default)
 uvicorn apophenic_memory.api.main:app --host 127.0.0.1 --port 8000 --reload
