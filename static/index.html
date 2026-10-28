@@ -182,7 +182,7 @@
             background: rgba(255, 255, 255, 0.02);
             border-left: 3px solid var(--accent);
             border-radius: 8px;
-            gap: 8px;
+            gap: 12px;
             flex-direction: column;
         }
 
@@ -281,6 +281,106 @@
 
         .btn-consent:hover {
             background: #1d4ed8;
+        }
+
+        /* ------------------------------------------------------------------ */
+        /* Constraint results grid (shown inside Red Pill reveal)              */
+        /* ------------------------------------------------------------------ */
+
+        .constraint-section {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .constraint-section-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .constraint-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 6px;
+        }
+
+        .constraint-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 7px 10px;
+            font-size: 0.82rem;
+        }
+
+        .constraint-row.passed {
+            border-color: rgba(74, 222, 128, 0.25);
+        }
+
+        .constraint-row.failed {
+            border-color: rgba(248, 113, 113, 0.3);
+            background: rgba(248, 113, 113, 0.04);
+        }
+
+        .constraint-icon {
+            flex-shrink: 0;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .constraint-body {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .constraint-id {
+            font-weight: 700;
+            color: var(--accent);
+            font-size: 0.78rem;
+            letter-spacing: 0.04em;
+        }
+
+        .constraint-msg {
+            color: #f87171;
+            font-size: 0.78rem;
+            line-height: 1.3;
+        }
+
+        .generation-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            padding: 4px 10px;
+            border-radius: 999px;
+            align-self: flex-start;
+        }
+
+        .generation-status.ok {
+            background: rgba(74, 222, 128, 0.12);
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            color: #86efac;
+        }
+
+        .generation-status.warn {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            color: #fcd34d;
+        }
+
+        .reveal-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 4px 0;
         }
     </style>
 </head>
@@ -398,7 +498,11 @@
             if (prevErr) prevErr.remove();
 
             try {
-                const response = await fetch('http://127.0.0.1:8000/memories/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gap_start: gap.start_date, gap_end: gap.end_date }) });
+                const response = await fetch('http://127.0.0.1:8000/memories/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ gap_start: gap.start_date, gap_end: gap.end_date }),
+                });
                 if (!response.ok) {
                     throw new Error(`Generation failed with status ${response.status}`);
                 }
@@ -429,24 +533,138 @@
             }
         }
 
+        /**
+         * Build the constraint results grid element from the constraint_results array.
+         * Each item: { constraint_id, passed, message }
+         */
+        function buildConstraintGrid(constraintResults) {
+            const section = document.createElement('div');
+            section.className = 'constraint-section';
+
+            const title = document.createElement('div');
+            title.className = 'constraint-section-title';
+            title.textContent = 'Constraint Audit';
+            section.appendChild(title);
+
+            if (!constraintResults || constraintResults.length === 0) {
+                const none = document.createElement('p');
+                none.style.color = 'var(--muted)';
+                none.style.fontSize = '0.82rem';
+                none.textContent = 'No constraint data available.';
+                section.appendChild(none);
+                return section;
+            }
+
+            const grid = document.createElement('div');
+            grid.className = 'constraint-grid';
+
+            constraintResults.forEach(cr => {
+                const row = document.createElement('div');
+                row.className = `constraint-row ${cr.passed ? 'passed' : 'failed'}`;
+
+                const icon = document.createElement('span');
+                icon.className = 'constraint-icon';
+                icon.textContent = cr.passed ? '✅' : '❌';
+
+                const body = document.createElement('div');
+                body.className = 'constraint-body';
+
+                const idSpan = document.createElement('span');
+                idSpan.className = 'constraint-id';
+                idSpan.textContent = cr.constraint_id;
+                body.appendChild(idSpan);
+
+                if (!cr.passed && cr.message) {
+                    const msg = document.createElement('span');
+                    msg.className = 'constraint-msg';
+                    msg.textContent = cr.message;
+                    body.appendChild(msg);
+                }
+
+                row.appendChild(icon);
+                row.appendChild(body);
+                grid.appendChild(row);
+            });
+
+            section.appendChild(grid);
+            return section;
+        }
+
         function replaceWithFabricatedMemory(gapCard, gap, data) {
             const displayDate = calculateMidpointDate(gap.start_date, gap.end_date);
+            const status = data.generation_status || 'ok';
+            const isWarning = status === 'completed_with_warnings';
+
             gapCard.className = 'card fabricated';
-            gapCard.innerHTML = `
-                <div class="card-header">
-                    <span class="badge">Fabricated Memory</span>
-                    <span class="date">${displayDate}</span>
-                </div>
-                <p>${data.memory_text || ''}</p>
-                <label class="toggle">
-                    <input type="checkbox" />
-                    <span class="pill-label">Red Pill</span>
-                    <div class="reveal">
-                        <p><strong>Why this is false:</strong> ${data.why_this_is_false || 'N/A'}</p>
-                        <p><strong>Rationale:</strong> ${data.rationale || 'N/A'}</p>
-                    </div>
-                </label>
+
+            // Build the card structure with DOM methods to avoid XSS
+            // and to allow the constraint grid to be inserted as a real element.
+            gapCard.innerHTML = '';
+
+            // --- Header ---
+            const header = document.createElement('div');
+            header.className = 'card-header';
+            header.innerHTML = `
+                <span class="badge">Fabricated Memory</span>
+                <span class="date">${displayDate}</span>
             `;
+            gapCard.appendChild(header);
+
+            // --- Memory text ---
+            const memP = document.createElement('p');
+            memP.textContent = data.memory_text || '';
+            gapCard.appendChild(memP);
+
+            // --- Red Pill toggle ---
+            const toggle = document.createElement('label');
+            toggle.className = 'toggle';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+
+            const pillLabel = document.createElement('span');
+            pillLabel.className = 'pill-label';
+            pillLabel.textContent = 'Red Pill';
+
+            // --- Reveal panel ---
+            const reveal = document.createElement('div');
+            reveal.className = 'reveal';
+
+            // Generation status pill
+            const statusPill = document.createElement('span');
+            statusPill.className = `generation-status ${isWarning ? 'warn' : 'ok'}`;
+            statusPill.textContent = isWarning ? '⚠ completed with warnings' : '✓ all checks passed';
+            reveal.appendChild(statusPill);
+
+            // Constraint grid
+            const grid = buildConstraintGrid(data.constraint_results || []);
+            reveal.appendChild(grid);
+
+            // Divider
+            const hr = document.createElement('hr');
+            hr.className = 'reveal-divider';
+            reveal.appendChild(hr);
+
+            // Why this is false
+            const whyP = document.createElement('p');
+            const whyStrong = document.createElement('strong');
+            whyStrong.textContent = 'Why this is false: ';
+            whyP.appendChild(whyStrong);
+            whyP.appendChild(document.createTextNode(data.why_this_is_false || 'N/A'));
+            reveal.appendChild(whyP);
+
+            // Rationale
+            const ratP = document.createElement('p');
+            const ratStrong = document.createElement('strong');
+            ratStrong.textContent = 'Rationale: ';
+            ratP.appendChild(ratStrong);
+            ratP.appendChild(document.createTextNode(data.rationale || 'N/A'));
+            reveal.appendChild(ratP);
+
+            toggle.appendChild(checkbox);
+            toggle.appendChild(pillLabel);
+            toggle.appendChild(reveal);
+            gapCard.appendChild(toggle);
         }
 
         window.addEventListener('DOMContentLoaded', () => {
