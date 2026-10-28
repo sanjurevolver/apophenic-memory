@@ -39,7 +39,16 @@ OVERUSED_ELEMENTS = [
 
 # Hedging / meta-leakage phrases that break the fiction (C4)
 _C4_HEDGES = ["i don't remember", "might have", "possibly", "i think"]
-_C4_META = ["fabricated", "fake", "ai", "this never happened"]
+_C4_META = [
+    "fabricated",
+    "false memory",
+    "as an ai",
+    "language model",
+    "in this simulation",
+    "fake",
+    "this never happened",
+]
+_C4_AI_REGEX = re.compile(r"\bai\b|\ba\.i\.(?!\w)", re.IGNORECASE)
 
 
 class OutputContractError(ValueError):
@@ -272,7 +281,8 @@ def validate(memory: dict, context: dict) -> list[ConstraintResult]:
     # ---- C4: PLAUSIBLE DENIABILITY -----------------------------------------
     hedge_hits = [h for h in _C4_HEDGES if h in text_lower]
     meta_hits = [m for m in _C4_META if m in text_lower]
-    c4_fails = hedge_hits + meta_hits
+    ai_hits = [m.group(0) for m in _C4_AI_REGEX.finditer(text)]
+    c4_fails = hedge_hits + meta_hits + ai_hits
     results.append(ConstraintResult(
         constraint_id="C4",
         passed=not c4_fails,
