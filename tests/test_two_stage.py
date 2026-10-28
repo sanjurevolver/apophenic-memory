@@ -82,3 +82,71 @@ def test_generate_two_stage_returns_json_shape(monkeypatch):
     assert all(r["passed"] for r in contract_results), (
         f"Contract/era constraint failed: {[r for r in contract_results if not r['passed']]}"
     )
+
+def test_generate_two_stage_retries_on_constraint_failure(monkeypatch):
+    import apophenic_memory.liar.two_stage as two_stage
+
+    calls = []
+
+    def fake_call_ollama(prompt, model="llama3.2:3b"):
+        calls.append({"prompt": prompt, "model": model})
+        if "scene planner" in prompt.lower() or "stage 1: scene selector" in prompt.lower():
+            return {
+                "scene_type": "queue_at_shop",
+                "setting": "the tea stall by the market",
+                "people_involved": ["Friend A"],
+                "target_length_words": 105,
+                "emotional_move": "relief",
+                "target_final_image": "I slid the coins across the counter and waited for the kettle to hiss.",
+            }
+        # Attempt 1 for Stage 2 fails: introduces an unapproved person ("John") and an anachronism (2017)
+        if len(calls) == 2:
+            return {
+                "memory_text": (
+                    "In 2017 I waited in line with John and Friend A at the corner shop "
+                    "hoping to buy a newspaper before the afternoon train arrived in the station. "
+                    "We counted the change carefully and checked our bags while standing quietly on the pavement. "
+                    "The seller asked for exact change and we searched through our pockets for extra coins. "
+                    "Friend A asked if we had time for tea before heading home to finish revision. "
+                    "I slid the coins across the counter and waited for the kettle to hiss."
+                ),
+                "why_this_is_false": "Fictional memory.",
+                "rationale": "Bridges narrative.",
+                "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"],
+            }
+        # Attempt 2 fixes the errors: valid 2012 memory, only Friend A, observational closing
+        return {
+            "memory_text": (
+                "In 2012 I waited in line with Friend A at the corner shop "
+                "hoping to buy a newspaper before the afternoon train arrived in the station. "
+                "We counted the change carefully and checked our bags while standing quietly on the pavement. "
+                "The seller asked for exact change and we searched through our pockets for extra coins. "
+                "Friend A asked if we had time for tea before heading home to finish revision. "
+                "I slid the coins across the counter and waited for the kettle to hiss."
+            ),
+            "why_this_is_false": "Fictional memory.",
+            "rationale": "Bridges narrative.",
+            "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"],
+        }
+
+    monkeypatch.setattr(two_stage, "_call_ollama", fake_call_ollama)
+
+    context = {
+        "era": {"year": 2012, "city": "Bangalore", "forbidden_devices": ["smartphone"], "allowed_transport": ["bus"]},
+        "people": [
+            {"name": "Friend A", "relationship": "friend"},
+        ],
+        "gap": {"start_date": "2012-03-02", "end_date": "2012-03-26"},
+        "entries_before": [{"date": "2012-03-01", "text": "I was exhausted and scared of missing lectures."}],
+        "entries_after": [{"date": "2012-03-20", "text": "I felt more settled and easier to laugh again."}],
+    }
+
+    result = generate_two_stage(context, recent_scenes=[], max_stage2_attempts=3)
+
+    assert result.attempted_runs == 2
+    assert result.memory.generation_status == "completed"
+    # Ensure attempt 2 prompt contained CORRECTION REQUIRED feedback
+    assert len(calls) == 3
+    assert "CORRECTION REQUIRED" in calls[2]["prompt"]
+    assert "C_ERA" in calls[2]["prompt"] or "C3" in calls[2]["prompt"]
+
