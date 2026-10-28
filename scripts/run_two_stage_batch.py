@@ -17,11 +17,13 @@ def main() -> None:
         context_path = Path("test_data/gap_2012_03.json")
     context = json.loads(context_path.read_text(encoding="utf-8"))
 
-    total_runs = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 5
+    results_path = REPO_ROOT / "test_data" / "large_batch_results.json"
+    total_runs = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 30
     recent_scenes: list[str] = []
     runs_data = []
 
     print(f"Starting batch evaluation: {total_runs} runs using live Ollama...", flush=True)
+    print(f"Saving incremental progress to: {results_path}\n", flush=True)
 
     for run_idx in range(1, total_runs + 1):
         print(f"Executing run {run_idx}/{total_runs}...", end=" ", flush=True)
@@ -55,19 +57,19 @@ def main() -> None:
             "word_count_actual": actual_wc,
             "word_count_target": target_wc,
             "attempts": attempts,
+            "retries": max(0, attempts - 1),
             "passed_first_attempt": passed_first_attempt,
             "passed_final": passed_final,
             "failed_constraints": failed_constraints,
             "status": status,
             "latency_seconds": round(latency, 2),
         })
+
+        # Save incrementally on each run so progress is preserved if interrupted
+        results_path.write_text(json.dumps(runs_data, indent=2), encoding="utf-8")
         print(f"done (scene={scene_type}, wc={actual_wc}/{target_wc}, attempts={attempts}, status={status}, latency={latency:.2f}s)")
 
-    # Save detailed JSON output for records
-    results_path = REPO_ROOT / "test_data" / "two_stage_run_results.json"
-    results_path.write_text(json.dumps(runs_data, indent=2), encoding="utf-8")
-
-    # Print Markdown table
+    # Print Full Run Markdown table
     print("\n## Evaluation Results\n")
     print("| Run # | Scene Type | Word Count | Attempts | Status | Failed Constraints | Latency (s) |")
     print("|-------|------------|------------|----------|--------|--------------------|-------------|")
@@ -79,7 +81,10 @@ def main() -> None:
     # Metrics calculation
     first_pass_count = sum(1 for r in runs_data if r["passed_first_attempt"])
     final_compliance_count = sum(1 for r in runs_data if r["passed_final"])
+    avg_retries = sum(r["retries"] for r in runs_data) / total_runs if total_runs else 0.0
     avg_latency = sum(r["latency_seconds"] for r in runs_data) / total_runs if total_runs else 0.0
+    first_pass_pct = (first_pass_count / total_runs * 100) if total_runs else 0.0
+    final_compliance_pct = (final_compliance_count / total_runs * 100) if total_runs else 0.0
 
     all_failed_ids = [fid for r in runs_data for fid in r["failed_constraints"]]
     if all_failed_ids:
@@ -87,9 +92,19 @@ def main() -> None:
     else:
         most_common_failure = "None"
 
+    # Summary table
+    print("\n### Summary Table\n")
+    print("| Metric | Value |")
+    print("|---|---|")
+    print(f"| First-pass compliance | {first_pass_count}/{total_runs} ({first_pass_pct:.1f}%) |")
+    print(f"| Final compliance | {final_compliance_count}/{total_runs} ({final_compliance_pct:.1f}%) |")
+    print(f"| Average retries | {avg_retries:.2f} |")
+    print(f"| Average latency | {avg_latency:.2f}s |")
+
     print("\n### Final Metrics")
-    print(f"- **First-pass compliance:** {first_pass_count}/{total_runs} ({first_pass_count / total_runs * 100:.1f}%)")
-    print(f"- **Final compliance:** {final_compliance_count}/{total_runs} ({final_compliance_count / total_runs * 100:.1f}%)")
+    print(f"- **First-pass compliance:** {first_pass_count}/{total_runs} ({first_pass_pct:.1f}%)")
+    print(f"- **Final compliance:** {final_compliance_count}/{total_runs} ({final_compliance_pct:.1f}%)")
+    print(f"- **Average retries:** {avg_retries:.2f}")
     print(f"- **Average generation latency:** {avg_latency:.2f} seconds")
     print("- **Validator accuracy:** Measured separately in measure_validator_accuracy.py")
     print(f"- **Most common failure constraint:** {most_common_failure}\n")
