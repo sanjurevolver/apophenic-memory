@@ -170,6 +170,7 @@ def _stage2_writer(
     context: dict,
     blueprint: dict,
     previous_word_count: int | None = None,
+    correction_feedback: str | None = None,
 ) -> dict:
     template = _load_prompt("stage2_writer.txt")
 
@@ -236,6 +237,9 @@ def _stage2_writer(
         f"{template}\n\n--- INPUT JSON ---\n"
         f"{json.dumps(payload, ensure_ascii=False, indent=2)}"
     )
+    if correction_feedback:
+        feedback_block += f"\nCORRECTION REQUIRED:\n{correction_feedback}\n"
+
     if feedback_block:
         full_prompt += feedback_block
 
@@ -308,23 +312,49 @@ def generate_two_stage(
     max_stage2_attempts: int = 3,
 ) -> GenerationResult:
     blueprint = _stage1_scene_select(context, recent_scenes)
-    raw_payload, attempts_used, _wc = _stage2_write_with_length(
-        context, blueprint, max_attempts=max_stage2_attempts
-    )
-    memory_payload = _normalize_generated_payload(raw_payload)
 
-    text = memory_payload.get("memory_text", "")
+    attempts_used = 0
+    correction_feedback: str | None = None
+    prev_wc: int | None = None
+    memory_payload: dict = {}
+    constraint_results: list[ConstraintResult] = []
+    failures: list[ConstraintResult] = []
 
-    # Run all validators — get structured results
-    constraint_results = _run_validators(memory_payload, context)
+    for attempt in range(1, max_stage2_attempts + 1):
+        attempts_used = attempt
+        raw_payload = _stage2_writer(
+            context,
+            blueprint,
+            previous_word_count=prev_wc,
+            correction_feedback=correction_feedback,
+        )
+        memory_payload = _normalize_generated_payload(raw_payload)
 
-    # Determine overall status
-    failures = [r for r in constraint_results if not r.passed]
-    generation_status = "completed_with_warnings" if failures else "completed"
+        # Run all validators — get structured results
+        constraint_results = _run_validators(memory_payload, context)
+        failures = [r for r in constraint_results if not r.passed]
+
+        if not failures:
+            # All constraints satisfied!
+            break
+
+        if attempt < max_stage2_attempts:
+            # Feed exact failure messages back to prompt as correction block
+            failure_details = [f"{r.constraint_id} ({r.message})" for r in failures]
+            correction_feedback = (
+                f"Your previous output failed the following constraints: "
+                f"{', '.join(failure_details)}. You MUST fix these errors."
+            )
+            text_val = memory_payload.get("memory_text", "")
+            prev_wc = len(text_val.split()) if isinstance(text_val, str) else None
+
+    # Determine overall status: only completed_with_warnings if retries exhausted
+    generation_status = "completed" if not failures else "completed_with_warnings"
 
     # Legacy flat failure strings for GenerationResult.failures (API / logging)
     failure_messages = list(dict.fromkeys(r.message for r in failures))
 
+    text = memory_payload.get("memory_text", "")
     word_count = len(text.split()) if isinstance(text, str) else 0
     memory = Memory(
         id=f"mem-{len(recent_scenes) + 1}",
