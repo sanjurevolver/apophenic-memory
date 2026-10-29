@@ -155,8 +155,9 @@ The suite was executed via `scripts/measure_validator_accuracy.py` across both c
    - Constraint **C6** counts `\bI\b` tokens to ensure first-person diary perspective. This guarantees personal voice syntax, not psychological depth.
 2. **Closing Sentence Verification:**
    - `validate_closing()` checks for emotion nouns (`felt`, `relieved`, `knew`, `triumph`) in the final sentence. While effective against prompt-level emotional cliches, models can occasionally smuggle sentiment into physical descriptions (*"I stared at the closed gate as the shadows deepened"*).
-3. **Word Count Sensitivity:**
-   - Small models struggle with strict bounds. Setting bounds to [80, 140] prevents runaway generation but caused 50% of 3B generations to require retries.
+3. **Word Count Sensitivity (Target Tolerance vs. Hard System Bounds):**
+   - **Target Tolerance (`target_length_words` ± 10):** In Stage 2 writing, the blueprint specifies a target length (e.g. 85, 95, 110, or 130 words) with an intended ±10 word convergence band for prose generation.
+   - **Hard System Bounds (`80–140 words`):** The deterministic validation stack (`CONTRACT` and `C2`) enforces an absolute, non-negotiable hard envelope of 80–140 words. Any output outside this range is rejected as non-compliant, regardless of the blueprint target. In the live 12-run batch, all 6 non-compliant memories satisfied the content constraints but marginally breached this hard envelope (e.g., Run 3 had 74 words on target 85; Run 4 had 148 words on target 130).
 
 ---
 

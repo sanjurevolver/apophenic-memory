@@ -10,7 +10,7 @@ Apophenic Memory is fully functional:
 - **FastAPI backend & dynamic frontend**: Real-time generation, interactive timeline, and Red Pill explainability UI are operational.
 - **Deterministic validation & SQLite persistence**: C1–C6 content constraints, era checks (`validate_era`), and closing rules (`validate_closing`) run deterministically; memories are stored locally in SQLite (`output/apophenic.db`).
 - **Privacy-first & hardened**: The API server is strictly bound to `127.0.0.1` (local-first, unexposed to LAN), all output directories are gitignored, and the destructive Panic Wipe physically removes the database file and all generated artifacts from disk.
-- **Comprehensive test suite**: Full suite of 33 unit and integration tests passing in CI via GitHub Actions without requiring an external Ollama instance.
+- **Comprehensive test suite**: Full suite of 51 unit and integration tests passing in CI via GitHub Actions without requiring an external Ollama instance.
 
 ---
 
@@ -116,8 +116,8 @@ nouns anywhere in the sentence, not just at the end.
     - on failure: retry stage 1 (max 3 attempts)
            ▼
 ┌──────────────────────┐
-│  STAGE 2: WRITER     │  writes memory_text toward blueprint
-│  (local LLM)         │  word count target ±10, final sentence = target_final_image
+│  STAGE 2: WRITER     │  writes memory_text toward blueprint target ±10 words
+│  (local LLM)         │  final sentence = target_final_image [system bounds: 80–140]
 └──────────┬───────────┘
            ▼
     [word-count retry loop]
@@ -324,6 +324,12 @@ UI integration. **If <2/3:** do not iterate further on prompt wording. Either
 document a wider length tolerance (honest surrender) or upgrade stage 2 to
 `qwen2.5:14b` / `llama3.1:70b`.
 
+> [!NOTE]
+> **Distinction Between Target Tolerance and System Hard Bounds:**
+> - **Blueprint Target Tolerance (`target_length_words` ± 10):** Pacing guidance provided to the Stage 2 generator (e.g., target 85, 110, or 130 words with an intended ±10 word convergence band).
+> - **Deterministic Hard Bounds (`80–140 words`):** Absolute boundaries enforced in code by `validate_contract()` and constraint `C2`. Regardless of whether an output is near the blueprint target, any generation outside the [80, 140] word envelope is rejected by the system as non-compliant.
+
+
 ## What has been proven, and what has not
 
 **Proven:**
@@ -380,10 +386,10 @@ improvement.
 - [x] **Dynamic Red Pill UI:** Browser interface with side-by-side real/fabricated timeline cards and interactive constraint audit panel
 
 ### Testing & Validation
-- [x] **Deterministic validator suite:** C1-C6 constraint engine, anachronism era validation (alidate_era), and closing sentence emotion checks (alidate_closing)
-- [x] **Automated safeguards test suite:** End-to-end unit tests (	ests/test_safeguards.py) covering permanent UI badges, disclaimer text, Panic Wipe deletion, and schema recovery
+- [x] **Deterministic validator suite:** C1-C6 constraint engine, anachronism era validation (`validate_era`), and closing sentence emotion checks (`validate_closing`)
+- [x] **Automated safeguards test suite:** End-to-end unit tests (`tests/test_safeguards.py`) covering permanent UI badges, disclaimer text, Panic Wipe deletion, and schema recovery
 - [x] **Isolated test suite:** Hermetic unit and integration tests with mocked LLM generation
-- [x] **Automated CI pipeline:** GitHub Actions workflow running pytest across all PRs and pushes to main
+- [x] **Automated CI pipeline:** GitHub Actions workflow running `pytest` across all PRs and pushes to main
 - [x] **Reconciled empirical evaluation:** Live CPU evaluation (15 runs cumulative) proves the retry loop doubles compliance from 25.0% to 50.0%, while an independent 30-sample golden dataset audits validator precision and recall across dev and held-out splits (detailed in [EVALUATION.md](EVALUATION.md)).
 
 ### Privacy & Security
