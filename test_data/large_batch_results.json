@@ -2,200 +2,49 @@
   {
     "run": 1,
     "scene_type": "phone_call_on_landline",
-    "word_count_actual": 221,
-    "word_count_target": 100,
-    "attempts": 3,
-    "retries": 2,
-    "passed_first_attempt": false,
-    "passed_final": false,
-    "failed_constraints": [
-      "C_CONTRACT",
-      "C2",
-      "C_CLOSING"
-    ],
-    "status": "completed_with_warnings",
-    "latency_seconds": 116.23
-  },
-  {
-    "run": 2,
-    "scene_type": "shared_meal_at_someone_house",
-    "word_count_actual": 127,
-    "word_count_target": 110,
-    "attempts": 2,
-    "retries": 1,
-    "passed_first_attempt": false,
-    "passed_final": true,
-    "failed_constraints": [],
-    "status": "completed",
-    "latency_seconds": 77.22
-  },
-  {
-    "run": 3,
-    "scene_type": "walk_home_in_silence",
-    "word_count_actual": 85,
-    "word_count_target": 115,
-    "attempts": 3,
-    "retries": 2,
-    "passed_first_attempt": false,
-    "passed_final": false,
-    "failed_constraints": [
-      "C6"
-    ],
-    "status": "completed_with_warnings",
-    "latency_seconds": 102.83
-  },
-  {
-    "run": 4,
-    "scene_type": "shared_meal_at_someone_house",
-    "word_count_actual": 96,
-    "word_count_target": 110,
-    "attempts": 3,
-    "retries": 2,
-    "passed_first_attempt": false,
-    "passed_final": true,
-    "failed_constraints": [],
-    "status": "completed",
-    "latency_seconds": 96.91
-  },
-  {
-    "run": 5,
-    "scene_type": "repair_shop_errand",
-    "word_count_actual": 96,
-    "word_count_target": 105,
-    "attempts": 3,
-    "retries": 2,
-    "passed_first_attempt": false,
-    "passed_final": true,
-    "failed_constraints": [],
-    "status": "completed",
-    "latency_seconds": 97.06
-  },
-  {
-    "run": 6,
-    "scene_type": "queue_at_shop",
-    "word_count_actual": 112,
-    "word_count_target": 110,
-    "attempts": 2,
-    "retries": 1,
-    "passed_first_attempt": false,
-    "passed_final": true,
-    "failed_constraints": [],
-    "status": "completed",
-    "latency_seconds": 82.45
-  },
-  {
-    "run": 7,
-    "scene_type": "classroom_after_hours",
-    "word_count_actual": 104,
-    "word_count_target": 105,
+    "word_count_actual": 107,
+    "word_count_target": 102,
     "attempts": 1,
     "retries": 0,
     "passed_first_attempt": true,
     "passed_final": true,
     "failed_constraints": [],
     "status": "completed",
-    "latency_seconds": 42.18
+    "latency_seconds": 77.32
   },
   {
-    "run": 8,
-    "scene_type": "library_study",
-    "word_count_actual": 130,
-    "word_count_target": 115,
-    "attempts": 3,
-    "retries": 2,
-    "passed_first_attempt": false,
-    "passed_final": false,
-    "failed_constraints": [
-      "C3"
-    ],
-    "status": "completed_with_warnings",
-    "latency_seconds": 110.15
-  },
-  {
-    "run": 9,
-    "scene_type": "bus_ride",
-    "word_count_actual": 98,
-    "word_count_target": 100,
-    "attempts": 2,
-    "retries": 1,
-    "passed_first_attempt": false,
-    "passed_final": true,
-    "failed_constraints": [],
-    "status": "completed",
-    "latency_seconds": 74.3
-  },
-  {
-    "run": 10,
-    "scene_type": "rain_shelter",
-    "word_count_actual": 108,
-    "word_count_target": 110,
-    "attempts": 3,
-    "retries": 2,
-    "passed_first_attempt": false,
-    "passed_final": true,
-    "failed_constraints": [],
-    "status": "completed",
-    "latency_seconds": 99.4
-  },
-  {
-    "run": 11,
+    "run": 2,
     "scene_type": "walk_home_in_silence",
-    "word_count_actual": 114,
-    "word_count_target": 115,
-    "attempts": 2,
-    "retries": 1,
-    "passed_first_attempt": false,
+    "word_count_actual": 139,
+    "word_count_target": 114,
+    "attempts": 1,
+    "retries": 0,
+    "passed_first_attempt": true,
     "passed_final": true,
     "failed_constraints": [],
     "status": "completed",
-    "latency_seconds": 79.12
+    "latency_seconds": 58.02
   },
   {
-    "run": 12,
-    "scene_type": "repair_shop_errand",
-    "word_count_actual": 122,
+    "run": 3,
+    "scene_type": "shared_meal_at_someone_house",
+    "word_count_actual": 131,
     "word_count_target": 105,
     "attempts": 3,
     "retries": 2,
     "passed_first_attempt": false,
     "passed_final": false,
     "failed_constraints": [
-      "C3"
+      "C_CLOSING"
     ],
     "status": "completed_with_warnings",
-    "latency_seconds": 108.5
+    "latency_seconds": 122.83
   },
   {
-    "run": 13,
-    "scene_type": "shared_meal_at_someone_house",
-    "word_count_actual": 105,
-    "word_count_target": 110,
-    "attempts": 2,
-    "retries": 1,
-    "passed_first_attempt": false,
-    "passed_final": true,
-    "failed_constraints": [],
-    "status": "completed",
-    "latency_seconds": 76.85
-  },
-  {
-    "run": 14,
-    "scene_type": "queue_at_shop",
-    "word_count_actual": 118,
-    "word_count_target": 110,
-    "attempts": 3,
-    "retries": 2,
-    "passed_first_attempt": false,
-    "passed_final": true,
-    "failed_constraints": [],
-    "status": "completed",
-    "latency_seconds": 101.2
-  },
-  {
-    "run": 15,
-    "scene_type": "classroom_after_hours",
-    "word_count_actual": 88,
-    "word_count_target": 100,
+    "run": 4,
+    "scene_type": "library_at_closing_time",
+    "word_count_actual": 138,
+    "word_count_target": 108,
     "attempts": 3,
     "retries": 2,
     "passed_first_attempt": false,
@@ -205,80 +54,43 @@
       "C6"
     ],
     "status": "completed_with_warnings",
-    "latency_seconds": 105.7
+    "latency_seconds": 168.08
   },
   {
-    "run": 16,
-    "scene_type": "library_study",
-    "word_count_actual": 109,
-    "word_count_target": 110,
+    "run": 5,
+    "scene_type": "repair_shop_errand",
+    "word_count_actual": 114,
+    "word_count_target": 115,
     "attempts": 2,
     "retries": 1,
     "passed_first_attempt": false,
     "passed_final": true,
     "failed_constraints": [],
     "status": "completed",
-    "latency_seconds": 81.35
+    "latency_seconds": 171.47
   },
   {
-    "run": 17,
-    "scene_type": "bus_ride",
-    "word_count_actual": 102,
-    "word_count_target": 105,
-    "attempts": 3,
-    "retries": 2,
-    "passed_first_attempt": false,
-    "passed_final": true,
-    "failed_constraints": [],
-    "status": "completed",
-    "latency_seconds": 98.6
-  },
-  {
-    "run": 18,
-    "scene_type": "phone_call_on_landline",
-    "word_count_actual": 125,
-    "word_count_target": 100,
+    "run": 6,
+    "scene_type": "classroom_after_hours",
+    "word_count_actual": 208,
+    "word_count_target": 110,
     "attempts": 3,
     "retries": 2,
     "passed_first_attempt": false,
     "passed_final": false,
     "failed_constraints": [
+      "C_CONTRACT",
+      "C2",
       "C3"
     ],
     "status": "completed_with_warnings",
-    "latency_seconds": 112.4
+    "latency_seconds": 219.02
   },
   {
-    "run": 19,
-    "scene_type": "rain_shelter",
-    "word_count_actual": 95,
-    "word_count_target": 100,
-    "attempts": 2,
-    "retries": 1,
-    "passed_first_attempt": false,
-    "passed_final": true,
-    "failed_constraints": [],
-    "status": "completed",
-    "latency_seconds": 78.9
-  },
-  {
-    "run": 20,
-    "scene_type": "walk_home_in_silence",
-    "word_count_actual": 110,
-    "word_count_target": 110,
-    "attempts": 3,
-    "retries": 2,
-    "passed_first_attempt": false,
-    "passed_final": true,
-    "failed_constraints": [],
-    "status": "completed",
-    "latency_seconds": 95.8
-  },
-  {
-    "run": 21,
+    "run": 7,
     "scene_type": "shared_meal_at_someone_house",
-    "word_count_actual": 142,
-    "word_count_target": 115,
+    "word_count_actual": 156,
+    "word_count_target": 100,
     "attempts": 3,
     "retries": 2,
     "passed_first_attempt": false,
@@ -288,129 +100,78 @@
       "C2"
     ],
     "status": "completed_with_warnings",
-    "latency_seconds": 118.3
+    "latency_seconds": 18927.58
   },
   {
-    "run": 22,
-    "scene_type": "queue_at_shop",
-    "word_count_actual": 106,
-    "word_count_target": 105,
+    "run": 8,
+    "scene_type": "rooftop_at_dusk",
+    "word_count_actual": 113,
+    "word_count_target": 109,
     "attempts": 2,
     "retries": 1,
     "passed_first_attempt": false,
     "passed_final": true,
     "failed_constraints": [],
     "status": "completed",
-    "latency_seconds": 80.1
+    "latency_seconds": 178.89
   },
   {
-    "run": 23,
-    "scene_type": "repair_shop_errand",
-    "word_count_actual": 99,
-    "word_count_target": 100,
-    "attempts": 3,
-    "retries": 2,
-    "passed_first_attempt": false,
-    "passed_final": true,
-    "failed_constraints": [],
-    "status": "completed",
-    "latency_seconds": 94.75
-  },
-  {
-    "run": 24,
-    "scene_type": "classroom_after_hours",
-    "word_count_actual": 115,
+    "run": 9,
+    "scene_type": "library_at_closing_time",
+    "word_count_actual": 79,
     "word_count_target": 110,
     "attempts": 3,
     "retries": 2,
     "passed_first_attempt": false,
     "passed_final": false,
     "failed_constraints": [
+      "C_CONTRACT",
+      "C2",
       "C3"
     ],
     "status": "completed_with_warnings",
-    "latency_seconds": 107.9
+    "latency_seconds": 205.24
   },
   {
-    "run": 25,
-    "scene_type": "library_study",
-    "word_count_actual": 112,
-    "word_count_target": 110,
-    "attempts": 2,
-    "retries": 1,
-    "passed_first_attempt": false,
-    "passed_final": true,
-    "failed_constraints": [],
-    "status": "completed",
-    "latency_seconds": 76.5
-  },
-  {
-    "run": 26,
-    "scene_type": "bus_ride",
-    "word_count_actual": 104,
-    "word_count_target": 105,
+    "run": 10,
+    "scene_type": "bus_ride_no_destination",
+    "word_count_actual": 118,
+    "word_count_target": 106,
     "attempts": 3,
     "retries": 2,
     "passed_first_attempt": false,
     "passed_final": true,
     "failed_constraints": [],
     "status": "completed",
-    "latency_seconds": 97.4
+    "latency_seconds": 125.15
   },
   {
-    "run": 27,
-    "scene_type": "rain_shelter",
-    "word_count_actual": 120,
-    "word_count_target": 110,
-    "attempts": 3,
-    "retries": 2,
-    "passed_first_attempt": false,
-    "passed_final": false,
-    "failed_constraints": [
-      "C_CLOSING"
-    ],
-    "status": "completed_with_warnings",
-    "latency_seconds": 104.2
-  },
-  {
-    "run": 28,
-    "scene_type": "walk_home_in_silence",
-    "word_count_actual": 97,
-    "word_count_target": 100,
-    "attempts": 2,
-    "retries": 1,
-    "passed_first_attempt": false,
-    "passed_final": true,
-    "failed_constraints": [],
-    "status": "completed",
-    "latency_seconds": 83.15
-  },
-  {
-    "run": 29,
+    "run": 11,
     "scene_type": "shared_meal_at_someone_house",
-    "word_count_actual": 108,
-    "word_count_target": 110,
-    "attempts": 3,
-    "retries": 2,
-    "passed_first_attempt": false,
+    "word_count_actual": 100,
+    "word_count_target": 105,
+    "attempts": 1,
+    "retries": 0,
+    "passed_first_attempt": true,
     "passed_final": true,
     "failed_constraints": [],
     "status": "completed",
-    "latency_seconds": 99.85
+    "latency_seconds": 67.43
   },
   {
-    "run": 30,
-    "scene_type": "repair_shop_errand",
-    "word_count_actual": 116,
-    "word_count_target": 105,
+    "run": 12,
+    "scene_type": "shared_meal_at_someone_house",
+    "word_count_actual": 147,
+    "word_count_target": 119,
     "attempts": 3,
     "retries": 2,
     "passed_first_attempt": false,
     "passed_final": false,
     "failed_constraints": [
-      "C3"
+      "C_CONTRACT",
+      "C2"
     ],
     "status": "completed_with_warnings",
-    "latency_seconds": 109.6
+    "latency_seconds": 151.49
   }
 ]

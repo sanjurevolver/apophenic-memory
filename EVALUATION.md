@@ -40,50 +40,35 @@ This decision was driven by consumer accessibility and local CPU generation late
   ollama pull llama3.2:3b
   ```
 
-## 6. Empirical Evaluation: 30-Run Batch Results with Constraint Retry Loop
+## 6. Empirical Evaluation: 12-Run Live Batch Results with Constraint Retry Loop
 
-To rigorously verify the two-stage pipeline and deterministic validator stack across a substantial sample size, an expanded evaluation batch of 30 generations was executed against `test_data/gap_2012_03.json` using `llama3.2:3b` with up to 3 retries and targeted `CORRECTION REQUIRED` feedback.
+To rigorously verify the two-stage pipeline and deterministic validator stack against live local inference, an evaluation batch was executed against `test_data/gap_2012_03.json` using `llama3.2:3b` with up to 3 retries and targeted `CORRECTION REQUIRED` feedback.
+
+*Note: This 12-run live batch is cumulative with the previous 3 live generations from initial verification runs, representing a total of 15 live generations across the verification suite.*
 
 | Run # | Scene Type | Word Count | Attempts | Status | Failed Constraints | Latency (s) |
 |:-----:|:---|:---:|:---:|:---:|:---|:---:|
-| 1 | `phone_call_on_landline` | 221 / 100 | 3 | `completed_with_warnings` | C_CONTRACT, C2, C_CLOSING | 116.23 |
-| 2 | `shared_meal_at_someone_house` | 127 / 110 | 2 | `completed` | None | 77.22 |
-| 3 | `walk_home_in_silence` | 85 / 115 | 3 | `completed_with_warnings` | C6 | 102.83 |
-| 4 | `shared_meal_at_someone_house` | 96 / 110 | 3 | `completed` | None | 96.91 |
-| 5 | `repair_shop_errand` | 96 / 105 | 3 | `completed` | None | 97.06 |
-| 6 | `queue_at_shop` | 112 / 110 | 2 | `completed` | None | 82.45 |
-| 7 | `classroom_after_hours` | 104 / 105 | 1 | `completed` | None | 42.18 |
-| 8 | `library_study` | 130 / 115 | 3 | `completed_with_warnings` | C3 | 110.15 |
-| 9 | `bus_ride` | 98 / 100 | 2 | `completed` | None | 74.30 |
-| 10 | `rain_shelter` | 108 / 110 | 3 | `completed` | None | 99.40 |
-| 11 | `walk_home_in_silence` | 114 / 115 | 2 | `completed` | None | 79.12 |
-| 12 | `repair_shop_errand` | 122 / 105 | 3 | `completed_with_warnings` | C3 | 108.50 |
-| 13 | `shared_meal_at_someone_house` | 105 / 110 | 2 | `completed` | None | 76.85 |
-| 14 | `queue_at_shop` | 118 / 110 | 3 | `completed` | None | 101.20 |
-| 15 | `classroom_after_hours` | 88 / 100 | 3 | `completed_with_warnings` | C3, C6 | 105.70 |
-| 16 | `library_study` | 109 / 110 | 2 | `completed` | None | 81.35 |
-| 17 | `bus_ride` | 102 / 105 | 3 | `completed` | None | 98.60 |
-| 18 | `phone_call_on_landline` | 125 / 100 | 3 | `completed_with_warnings` | C3 | 112.40 |
-| 19 | `rain_shelter` | 95 / 100 | 2 | `completed` | None | 78.90 |
-| 20 | `walk_home_in_silence` | 110 / 110 | 3 | `completed` | None | 95.80 |
-| 21 | `shared_meal_at_someone_house` | 142 / 115 | 3 | `completed_with_warnings` | C_CONTRACT, C2 | 118.30 |
-| 22 | `queue_at_shop` | 106 / 105 | 2 | `completed` | None | 80.10 |
-| 23 | `repair_shop_errand` | 99 / 100 | 3 | `completed` | None | 94.75 |
-| 24 | `classroom_after_hours` | 115 / 110 | 3 | `completed_with_warnings` | C3 | 107.90 |
-| 25 | `library_study` | 112 / 110 | 2 | `completed` | None | 76.50 |
-| 26 | `bus_ride` | 104 / 105 | 3 | `completed` | None | 97.40 |
-| 27 | `rain_shelter` | 120 / 110 | 3 | `completed_with_warnings` | C_CLOSING | 104.20 |
-| 28 | `walk_home_in_silence` | 97 / 100 | 2 | `completed` | None | 83.15 |
-| 29 | `shared_meal_at_someone_house` | 108 / 110 | 3 | `completed` | None | 99.85 |
-| 30 | `repair_shop_errand` | 116 / 105 | 3 | `completed_with_warnings` | C3 | 109.60 |
+| 1 | `phone_call_on_landline` | 107 / 102 | 1 | `completed` | None | 77.32 |
+| 2 | `walk_home_in_silence` | 139 / 114 | 1 | `completed` | None | 58.02 |
+| 3 | `shared_meal_at_someone_house` | 131 / 105 | 3 | `completed_with_warnings` | C_CLOSING | 122.83 |
+| 4 | `library_at_closing_time` | 138 / 108 | 3 | `completed_with_warnings` | C3, C6 | 168.08 |
+| 5 | `repair_shop_errand` | 114 / 115 | 2 | `completed` | None | 171.47 |
+| 6 | `classroom_after_hours` | 208 / 110 | 3 | `completed_with_warnings` | C_CONTRACT, C2, C3 | 219.02 |
+| 7 | `shared_meal_at_someone_house` | 156 / 100 | 3 | `completed_with_warnings` | C_CONTRACT, C2 | 18,927.58* |
+| 8 | `rooftop_at_dusk` | 113 / 109 | 2 | `completed` | None | 178.89 |
+| 9 | `library_at_closing_time` | 79 / 110 | 3 | `completed_with_warnings` | C_CONTRACT, C2, C3 | 205.24 |
+| 10 | `bus_ride_no_destination` | 118 / 106 | 3 | `completed` | None | 125.15 |
+| 11 | `shared_meal_at_someone_house` | 100 / 105 | 1 | `completed` | None | 67.43 |
+| 12 | `shared_meal_at_someone_house` | 147 / 119 | 3 | `completed_with_warnings` | C_CONTRACT, C2 | 151.49 |
 
-### Key Findings & Final Metrics (30-Run Sample)
-- **First-pass compliance:** 1/30 (3.3%) — confirms that small models almost universally fail one or more hard constraints on zero-shot generation.
-- **Final compliance (with retry loop):** 20/30 (66.7%) — programmatic constraint correction dramatically improves adherence, converting 19 initially failing generations into compliant memories without human intervention.
-- **Average retries:** 1.60 retries per memory generation.
-- **Average generation latency:** 93.63 seconds per memory.
-- **Generation Success Rate:** 30/30 (100.0%) — all runs successfully produced structured memories for the diarist, with unresolvable constraint issues safely flagged as warnings rather than crashing or polluting data silently.
-- **Most common initial failure:** C3 (Real People Only / invented names), followed by C6 (narrative voice / first-person pronoun frequency).
+*\*Run 7 elapsed time includes machine sleep/suspension interval.*
+
+### Key Findings & Final Metrics (12-Run Live Sample)
+- **First-pass compliance:** 3/12 (25.0%) — confirms that small models unguided struggle with zero-shot constraint adherence.
+- **Final compliance (with retry loop):** 6/12 (50.0%) — the targeted self-correction retry loop doubled generation compliance from 25.0% to 50.0% without requiring human intervention.
+- **Average retries:** 1.33 retries per generation.
+- **Generation Success Rate:** 12/12 (100.0%) — every run produced a structured, persistent memory with warnings surfaced transparently for any unresolvable constraint boundaries.
+- **Most common failure mode:** `C_CONTRACT` / `C2` (word count upper/lower bounds under strict length limits).
 
 ## 7. Validator Accuracy (Golden Dataset)
 
@@ -100,6 +85,7 @@ The evaluation script ([`scripts/measure_validator_accuracy.py`](scripts/measure
 | **True Negatives (valid correctly passed)** | 5 |
 | **False Positives (valid incorrectly rejected)** | 0 |
 | **False Negatives (invalid incorrectly accepted)** | 0 |
+| **Accuracy** | **100.0%** |
 | **Precision** | **100.0%** |
 | **Recall** | **100.0%** |
 | **False Positive Rate** | **0.0%** |
@@ -112,3 +98,5 @@ The evaluation script ([`scripts/measure_validator_accuracy.py`](scripts/measure
 5. **C_ERA (Chronological Integrity):** Flagged out-of-bounds year references (`2017` in a 2012 gap).
 
 This empirical measurement proves that the deterministic validation layer operates with 100% precision and recall on targeted failure modes, ensuring that compliance metrics reflect true model behavior rather than validator noise.
+
+This confirms the core architectural thesis: small models are too weak to reliably follow complex constraints unprompted, but pairing them with deterministic validators and an automated self-correction retry loop doubles compliance from 25% to 50% while guaranteeing structural safety and transparency even when generation warnings are surfaced.
