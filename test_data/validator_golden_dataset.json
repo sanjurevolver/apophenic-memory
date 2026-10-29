@@ -1,102 +1,532 @@
 [
   {
-    "id": "valid-1-tea-stall",
+    "id": "valid-01-tea-stall",
+    "split": "curated_dev",
     "memory_text": "In March 2012, I waited in the queue outside the tea stall by the market with Friend A after class. We had a list of 3 errands and Friend A held the copper coins while we counted the change twice. The shop smelled of roasted cardamom, and the kettle hissed steadily on the metal stove behind the counter. I stood quietly with my notebook tucked under my arm while Friend A asked for two cups of tea. I slid the coins across the wooden counter and waited for the steam to rise.",
     "expected_pass": true,
-    "gap_start": "2012-03-02",
-    "gap_end": "2012-03-26",
-    "why_this_is_false": "Fictional memory to bridge the revision gap.",
-    "rationale": "Constructed around a domestic market errand.",
-    "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"]
+    "targeted_constraints": [],
+    "why_this_is_false": "Fictional errand to bridge gap.",
+    "rationale": "Grounded in market routine.",
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
   },
   {
-    "id": "valid-2-bus-ride",
+    "id": "valid-02-bus-ride",
+    "split": "curated_dev",
     "memory_text": "I boarded the city bus on route 4 at 5:00 PM with Friend B after our afternoon lecture ended. The bus was half-empty and we found two seats near the open back door where the evening breeze blew in. Friend B showed me a folded paper receipt with 12 phone numbers scribbled on the margins. We rode past the market square without speaking until the conductor rang the double bell. I tucked my bus ticket into my pocket and watched the streetlights flicker on along the road.",
     "expected_pass": true,
-    "gap_start": "2012-03-02",
-    "gap_end": "2012-03-26",
+    "targeted_constraints": [],
     "why_this_is_false": "Fictional bus trip during March 2012.",
     "rationale": "Connects late-afternoon travel to diarist schedule.",
-    "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"]
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
   },
   {
-    "id": "valid-3-library-study",
+    "id": "valid-03-library-study",
+    "split": "curated_dev",
     "memory_text": "Housemate C and I stayed inside the library until 8:00 PM on a Tuesday in March 2012. The room grew cold as the ceiling fans slowed down, and only two green desk lamps remained illuminated. Housemate C stacked 4 reference volumes onto the wooden cart and returned the borrowing card to the clerk. I copied the final diagram into my exercise notebook with a blue ballpoint pen. I closed the heavy binder and pushed the wooden chair under the reading table.",
     "expected_pass": true,
-    "gap_start": "2012-03-02",
-    "gap_end": "2012-03-26",
+    "targeted_constraints": [],
     "why_this_is_false": "The diarist never studied late with Housemate C on that evening.",
     "rationale": "Bridges the study gap before the exam.",
-    "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"]
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
   },
   {
-    "id": "valid-4-hostel-cooking",
+    "id": "valid-04-hostel-cooking",
+    "split": "curated_dev",
     "memory_text": "On a damp Saturday morning in 2012, I helped Friend A cook a simple meal of rice and lentils in the hostel kitchen. We peeled 3 small onions and chopped two green chilies on a plastic chopping board beside the sink. Friend A stirred the brass pot with an aluminium spoon while the radio played cricket commentary in the corner. I placed two stainless steel plates on the kitchen table and wiped the counter with a dry rag. I turned the brass knob on the gas cylinder and stepped out onto the balcony.",
     "expected_pass": true,
-    "gap_start": "2012-03-02",
-    "gap_end": "2012-03-26",
+    "targeted_constraints": [],
     "why_this_is_false": "Fictional domestic cooking scene.",
     "rationale": "Grounded in domestic hostel routine.",
-    "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"]
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
   },
   {
-    "id": "valid-5-watch-repair",
+    "id": "valid-05-watch-repair",
+    "split": "curated_dev",
     "memory_text": "I walked with Housemate C to the corner repair shop at 4:30 in the afternoon during the second week of March 2012. The watchmaker examined my grandfather's mechanical wristwatch under a magnifying lens on his workbench. He replaced the tiny balance spring and charged us 25 rupees for the repair. Housemate C stood by the door examining the antique pendulum clocks hanging along the lime-washed wall. I wound the crown three turns and slipped the leather strap around my wrist.",
     "expected_pass": true,
-    "gap_start": "2012-03-02",
-    "gap_end": "2012-03-26",
+    "targeted_constraints": [],
     "why_this_is_false": "The watchmaker errand never took place.",
     "rationale": "Creates an era-appropriate mechanical repair scene.",
-    "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"]
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
   },
   {
-    "id": "invalid-1-unapproved-name",
+    "id": "valid-06-cycle-stand",
+    "split": "curated_dev",
+    "memory_text": "I wheeled my bicycle past the departmental gate at 4:00 PM to meet Friend A by the campus cycle stand. The rear tire was nearly flat and the mechanic used a foot pump to fill 28 pounds of air into the black rubber tube. Friend A handed 5 rupees to the boy at the counter while I tested the pedal tension. The smell of grease and wet mud drifted up from the concrete floor. I clipped the metal lock onto the frame and wheeled the cycle toward the library avenue.",
+    "expected_pass": true,
+    "targeted_constraints": [],
+    "why_this_is_false": "Fictional bicycle repair scene.",
+    "rationale": "Era-appropriate mechanical errand.",
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
+  },
+  {
+    "id": "valid-07-post-office",
+    "split": "curated_dev",
+    "memory_text": "In the second week of March 2012, I went with Friend B to the post office near the central junction to mail 2 official envelopes. The counter clerk weighed each parcel on a brass balance and stamped 15 rupees worth of adhesive stamps across the flap. Friend B checked the tracking slip while we waited for the receipt to be printed on carbon paper. The ceiling fan creaked rhythmically above the wooden counter benches. I dropped the letters into the red iron postbox and walked down the brick steps.",
+    "expected_pass": true,
+    "targeted_constraints": [],
+    "why_this_is_false": "Fictional post office outing.",
+    "rationale": "Era-appropriate postal interaction.",
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
+  },
+  {
+    "id": "valid-08-xerox-shop",
+    "split": "curated_dev",
+    "memory_text": "Housemate C and I visited the photocopy shop behind the science complex at 11:00 AM on a Wednesday in 2012. We needed 18 pages of handwritten chemistry notes duplicated for the upcoming laboratory test. The machine humming under the neon strip light spat out warm sheets of paper into the plastic output tray. Housemate C checked each page against the original index while I counted the change in my pocket. I stacked the stapled booklets together and slid them into my canvas satchel.",
+    "expected_pass": true,
+    "targeted_constraints": [],
+    "why_this_is_false": "Fictional academic preparation errand.",
+    "rationale": "Bridges exam revision gap.",
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
+  },
+  {
+    "id": "valid-09-railway-reservation",
+    "split": "held_out_test",
+    "memory_text": "I stood in the queue at the railway reservation counter with Friend A on a humid Monday morning in March 2012. We filled out the blue reservation slip for 2 berths on the overnight passenger train back to my hometown. The clerk tapped the mechanical keyboard behind the glass partition and handed back 450 rupees in worn currency notes. Friend A checked the date on the printed ticket while I zipped my wallet into my jacket pocket. I folded the paper receipt and placed it securely inside my diary.",
+    "expected_pass": true,
+    "targeted_constraints": [],
+    "why_this_is_false": "The railway reservation errand did not occur during this gap.",
+    "rationale": "Period travel planning scene.",
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
+  },
+  {
+    "id": "valid-10-terrace-drying",
+    "split": "held_out_test",
+    "memory_text": "At noon on a clear Sunday in March 2012, I carried a bucket of washed laundry up to the hostel terrace with Friend B. We tied 4 nylon clotheslines between the concrete water tank pillars and secured the damp towels with wooden clips. Friend B leaned against the parapet wall watching the yellow kites circling over the city skyline. The hot breeze dried the cotton shirts within an hour while we sat in the stairwell shade. I unclipped the dry sheets and stacked them neatly across my arm.",
+    "expected_pass": true,
+    "targeted_constraints": [],
+    "why_this_is_false": "Fictional domestic chore memory.",
+    "rationale": "Realistic weekend domestic activity.",
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
+  },
+  {
+    "id": "valid-11-edge-starting-title-words",
+    "split": "held_out_test",
+    "memory_text": "Thursday morning brought cold wind across the campus road as I walked with Friend A to the departmental seminar room. Chapter 3 of the syllabus was scheduled for discussion, and 2 guest lecturers had arrived from the regional research institute. Friend A set down our notebook folders on the front desk while the projector hummed softly against the blackboard. The room smelled of wet chalk and floor polish as twenty students entered. I uncapped my black ink pen and wrote the date at the top of the paper.",
+    "expected_pass": true,
+    "targeted_constraints": [],
+    "why_this_is_false": "Fictional academic seminar scene.",
+    "rationale": "Tests sentence-starting common words like Thursday and Chapter.",
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
+  },
+  {
+    "id": "valid-12-edge-substring-containment",
+    "split": "held_out_test",
+    "memory_text": "I said hello to Housemate C when we met again near the library entrance at 3:15 in the afternoon. We were waiting for the departmental aide to deliver 5 reference envelopes containing the updated examination timetable. Housemate C pointed out the plain wooden bulletin board where notices had been posted since morning. The air was cool under the portico pillars as two buses drove past the gate. I received the official packet from the clerk and tucked it under my left elbow.",
+    "expected_pass": true,
+    "targeted_constraints": [],
+    "why_this_is_false": "Fictional timetable collection errand.",
+    "rationale": "Tests words containing substrings like said, waiting, again, aide, plain without false C4 triggers.",
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
+  },
+  {
+    "id": "valid-13-edge-locations-and-streets",
+    "split": "held_out_test",
+    "memory_text": "In March 2012, I accompanied Friend A through the central bazaar along Commercial Street to purchase drawing supplies. We visited 2 stationery shops near the junction and purchased a wooden drafting scale and a roll of tracing paper. Friend A carried the cardboard cylinder while we dodged three city buses near the traffic signal on the corner. The afternoon sun reflected off the corrugated metal awnings along the pavement. I handed 60 rupees to the cashier and pocketed the printed carbon receipt.",
+    "expected_pass": true,
+    "targeted_constraints": [],
+    "why_this_is_false": "Fictional market errand.",
+    "rationale": "Tests proper nouns of locations and streets (Commercial Street) without C3 false positive.",
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
+  },
+  {
+    "id": "valid-14-edge-quotes-and-punctuation",
+    "split": "held_out_test",
+    "memory_text": "Friend B and I stopped outside the corner dispensary at 6:45 PM after our evening revision session ended. The pharmacist asked, \"Two packets of lozenges or one?\" while he counted 10 tablets from the glass jar on the shelf. I handed over 20 rupees in coins and checked the printed expiry date on the paper sleeve. Friend B adjusted his shoulder bag while the street vendor across the road lit two kerosene lanterns. I took the small paper packet and placed it in my coat pocket.",
+    "expected_pass": true,
+    "targeted_constraints": [],
+    "why_this_is_false": "Fictional pharmacy visit.",
+    "rationale": "Tests direct speech quotes and dialogue punctuation.",
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
+  },
+  {
+    "id": "valid-15-held-out-medical-store",
+    "split": "held_out_test",
+    "memory_text": "I walked with Friend A to the neighbourhood chemist shop at 7:30 in the evening on 18 March 2012. We purchased 1 roll of cotton bandage and an antiseptic ointment for my scraped knee after a clumsy stumble on the hostel stairs. Friend A inspected the price sticker while the assistant wrote out a 35 rupee bill in duplicate. The shop fan blew the faint smell of iodine across the glass showcase. I paid with two twenty-rupee notes and took my paper parcel from the counter.",
+    "expected_pass": true,
+    "targeted_constraints": [],
+    "why_this_is_false": "Fictional minor injury errand.",
+    "rationale": "Held-out domestic first-aid errand.",
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
+  },
+  {
+    "id": "invalid-01-unapproved-name-john",
+    "split": "curated_dev",
     "memory_text": "In March 2012, I walked to the commercial market with John and Priya to buy some groceries for the flat. John carried two cloth bags while Priya counted the change for 5 mangoes at the fruit stall. We took the city bus back home and divided the vegetables evenly in the kitchen pantry. I placed my notebook on the counter and poured three glasses of cold water from the clay pot. I set the brass jug on the shelf and closed the pantry door.",
     "expected_pass": false,
-    "gap_start": "2012-03-02",
-    "gap_end": "2012-03-26",
+    "targeted_constraints": [
+      "C3"
+    ],
     "why_this_is_false": "Invented characters John and Priya.",
     "rationale": "Fails C3 constraint.",
-    "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"]
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C4",
+      "C5",
+      "C6"
+    ]
   },
   {
-    "id": "invalid-2-anachronism-year",
+    "id": "invalid-02-anachronism-year-2017",
+    "split": "curated_dev",
     "memory_text": "In March 2017, I met Friend A at the central railway platform to collect a wooden parcel sent from my hometown. We stood under the platform clock waiting for the 3:15 train to arrive from the northern junction. Friend A held the baggage receipt with 2 serial numbers written in black ink while we counted the coaches passing by. I carried the cardboard box over to the cycle stand and tied it firmly with nylon twine. I tightened the knot with both hands and pushed the pedal forward.",
     "expected_pass": false,
-    "gap_start": "2012-03-02",
-    "gap_end": "2012-03-26",
+    "targeted_constraints": [
+      "C_ERA"
+    ],
     "why_this_is_false": "Anachronistic year 2017.",
-    "rationale": "Fails C_ERA and C1 constraints.",
-    "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"]
+    "rationale": "Fails C_ERA constraint.",
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
   },
   {
-    "id": "invalid-3-emotional-ending",
+    "id": "invalid-03-emotional-ending-relieved",
+    "split": "curated_dev",
     "memory_text": "On a quiet evening in March 2012, I sat on the hostel steps with Friend A watching the birds fly over the trees. We had spent 4 hours revising physics formulas and both our notebooks were completely filled with notes. Friend A offered me half a butter biscuit and talked about visiting the lake on Sunday. I drank the warm water from my steel bottle and listened to the distant city bells ringing. I felt relieved and finally happy that the stressful week was over.",
     "expected_pass": false,
-    "gap_start": "2012-03-02",
-    "gap_end": "2012-03-26",
+    "targeted_constraints": [
+      "C_CLOSING"
+    ],
     "why_this_is_false": "Ends on emotional summary.",
     "rationale": "Fails C_CLOSING constraint.",
-    "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"]
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
   },
   {
-    "id": "invalid-4-forbidden-device",
+    "id": "invalid-04-forbidden-device-smartphone",
+    "split": "curated_dev",
     "memory_text": "In March 2012, I sat in the university canteen with Friend B while checking new notifications on my smartphone. I opened the whatsapp group on the touch-screen device to see if 6 classmates had reached the examination hall on campus. Friend B asked to borrow my phone to send a quick text message to his parents about the weekend bus tickets. I handed the phone across the laminate table and finished my cup of hot coffee. I picked up my canvas backpack and walked towards the library entrance.",
     "expected_pass": false,
-    "gap_start": "2012-03-02",
-    "gap_end": "2012-03-26",
+    "targeted_constraints": [
+      "C1"
+    ],
     "why_this_is_false": "Mentions smartphone and whatsapp (forbidden in 2012 era).",
     "rationale": "Fails C1 forbidden device constraint.",
-    "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"]
+    "constraints_satisfied": [
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
   },
   {
-    "id": "invalid-5-ai-meta-leakage",
+    "id": "invalid-05-ai-meta-leakage",
+    "split": "curated_dev",
     "memory_text": "As an AI, I am generating this memory for March 2012 where I met Friend A near the old book depot. This memory was fabricated to fill the gap of 24 days in the student's personal calendar. Friend A carried 2 paperback novels and asked whether we should walk past the botanical gardens. I agreed and we strolled along the shaded path until the streetlights switched on. I opened my umbrella against the mist and stepped onto the damp gravel.",
     "expected_pass": false,
-    "gap_start": "2012-03-02",
-    "gap_end": "2012-03-26",
+    "targeted_constraints": [
+      "C4"
+    ],
     "why_this_is_false": "Contains explicit AI meta-leakage.",
     "rationale": "Fails C4 plausible deniability constraint.",
-    "constraints_satisfied": ["C1", "C2", "C3", "C4", "C5", "C6"]
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C5",
+      "C6"
+    ]
+  },
+  {
+    "id": "invalid-06-cliche-phrase-petrichor",
+    "split": "curated_dev",
+    "memory_text": "I walked through the botanical gardens with Friend A at 5:00 PM during the golden hour after a sudden drizzle. The petrichor rose from the damp red soil and the city hum seemed to quiet down as 2 gardeners packed their pruning tools. Friend A carried a paper cup of tea while we discussed the upcoming semester exams in March 2012. I watched the water droplets slide down the eucalyptus leaves in the gentle evening breeze. I wiped the wooden bench with my handkerchief and sat down.",
+    "expected_pass": false,
+    "targeted_constraints": [
+      "C1"
+    ],
+    "why_this_is_false": "Contains banned stock clich\u00e9 phrases (petrichor, golden hour, city hum).",
+    "rationale": "Fails C1 banned phrase constraint.",
+    "constraints_satisfied": [
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
+  },
+  {
+    "id": "invalid-07-under-length-short",
+    "split": "curated_dev",
+    "memory_text": "I met Friend A at 4:00 PM in March 2012 near the library steps. We talked about the 2 difficult math questions on the assignment. I zipped my black backpack and walked home.",
+    "expected_pass": false,
+    "targeted_constraints": [
+      "C2",
+      "CONTRACT"
+    ],
+    "why_this_is_false": "Far too short (33 words, minimum is 80).",
+    "rationale": "Fails C2 word count and contract bounds.",
+    "constraints_satisfied": [
+      "C1",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
+  },
+  {
+    "id": "invalid-08-over-length-long",
+    "split": "curated_dev",
+    "memory_text": "In the middle of March 2012, I spent an extraordinarily prolonged afternoon wandering through the crowded marketplace behind the bus depot with Friend B because we had completely run out of groceries and supplies in our shared student hostel flat. We stopped at 4 different vegetable stalls comparing the prices of potatoes, onions, green chilies, and fresh coriander leaves, while Friend B meticulously recorded every single expense in a small black spiral pocket diary with a pencil. The afternoon heat beat down on the corrugated tin roofs, making the narrow alleys uncomfortably warm and dusty as dozens of handcarts and two-wheeled delivery carts pushed past us in every direction. We eventually purchased 3 kilograms of rice and two bottles of mustard oil from a wholesale merchant near the main gate. I carried the heavy burlap sack over my right shoulder while Friend B held the paper parcels. I hauled the load onto the wooden kitchen counter and unknotted the jute cord.",
+    "expected_pass": false,
+    "targeted_constraints": [
+      "C2",
+      "CONTRACT"
+    ],
+    "why_this_is_false": "Over word count limit (164 words, maximum is 140).",
+    "rationale": "Fails C2 word count and contract bounds.",
+    "constraints_satisfied": [
+      "C1",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
+  },
+  {
+    "id": "invalid-09-hedging-leakage",
+    "split": "held_out_test",
+    "memory_text": "I don't remember exactly if it was Tuesday or Wednesday in March 2012, but I think possibly I walked to the chemist with Friend A around 4:00 PM. We might have purchased 2 packets of throat lozenges and some antiseptic cream, though I am not entirely sure about the receipt amount. Friend A carried an umbrella because clouds had gathered over the northern hills. I waited near the doorway while the shopkeeper wrapped the bottles in brown paper. I pocketed the change and pulled my collar against the wind.",
+    "expected_pass": false,
+    "targeted_constraints": [
+      "C4"
+    ],
+    "why_this_is_false": "Contains overt epistemic hedging phrases ('I don't remember', 'I think', 'possibly', 'might have').",
+    "rationale": "Fails C4 plausible deniability constraint.",
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C5",
+      "C6"
+    ]
+  },
+  {
+    "id": "invalid-10-missing-anchors",
+    "split": "held_out_test",
+    "memory_text": "I walked through the neighbourhood streets with Friend A as shadows lengthened along the pavement. We paused by the closed tea shop and watched stray dogs resting near the stone steps. Friend A looked across the vacant lot toward the distant church steeple while leaves rustled in the dry branches overhead. We discussed the pending examination schedule and debated whether the library would remain open over the weekend. I adjusted the strap of my satchel and stepped onto the gravel path.",
+    "expected_pass": false,
+    "targeted_constraints": [
+      "C5"
+    ],
+    "why_this_is_false": "Lacks any specific anchor: no numbers, no clock times, no quotes, no period markers.",
+    "rationale": "Fails C5 specificity constraint.",
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C6"
+    ]
+  },
+  {
+    "id": "invalid-11-weak-voice-pronouns",
+    "split": "held_out_test",
+    "memory_text": "The afternoon of 12 March 2012 was quiet in the hostel courtyard where Friend A sat repairing a bicycle chain with 2 small wrenches. The grease spread quickly across the newspaper spread on the stone flags while three sparrows pecked at leftover breadcrumbs near the drain. The kettle hissed from the kitchen window and the clock struck 4:00 PM. A cool breeze shook the neem leaves above the porch roof. The bicycle chain snapped into place with a sharp metallic click.",
+    "expected_pass": false,
+    "targeted_constraints": [
+      "C6"
+    ],
+    "why_this_is_false": "Contains zero first-person 'I' pronouns (minimum required is 2).",
+    "rationale": "Fails C6 personal voice constraint.",
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5"
+    ]
+  },
+  {
+    "id": "invalid-12-future-tense-opening",
+    "split": "held_out_test",
+    "memory_text": "I will meet Friend B tomorrow at 10:00 AM outside the central bank to renew our student passbook for the semester. We had already collected 3 required signature forms from the college registrar office in March 2012 and secured them inside a green folder. The clerk instructed us to bring two passport-sized photographs and our valid identity cards to counter 4. I reviewed the checklist once more before placing the papers in my backpack. I fastened the buckle and switched off the desk lamp.",
+    "expected_pass": false,
+    "targeted_constraints": [
+      "C6"
+    ],
+    "why_this_is_false": "Opening sentence uses future tense ('I will meet').",
+    "rationale": "Fails C6 retrospective diary voice constraint.",
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5"
+    ]
+  },
+  {
+    "id": "invalid-13-psychological-summary",
+    "split": "held_out_test",
+    "memory_text": "In March 2012, Housemate C and I walked back from the laboratory building at 6:30 PM after submitting 2 lengthy physics assignments. The yellow streetlamps flickered to life along the avenue and the evening air was cool after a long day indoors. Housemate C pointed out the full moon rising behind the telephone exchange tower. I carried my heavy spiral binder under my arm while we talked about how demanding the professors had been all term. We both knew deep down that everything would turn out all right in the end.",
+    "expected_pass": false,
+    "targeted_constraints": [
+      "C_CLOSING"
+    ],
+    "why_this_is_false": "Ends on psychological summary ('We both knew deep down...').",
+    "rationale": "Fails C_CLOSING concrete observational ending constraint.",
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
+  },
+  {
+    "id": "invalid-14-unapproved-name-rahul",
+    "split": "held_out_test",
+    "memory_text": "I went to the library reading hall at 2:00 PM in March 2012 with Rahul and Anita to finish our shared research project. Rahul checked out 3 reference volumes from the catalog clerk while Anita marked the key chapters with yellow slips. We worked silently at the corner oak table until the evening bell chimed outside. I returned the heavy dictionaries to the reserve shelf and gathered my notes. I tucked my fountain pen into my shirt pocket and walked out through the turnstile.",
+    "expected_pass": false,
+    "targeted_constraints": [
+      "C3"
+    ],
+    "why_this_is_false": "Introduces unapproved fictional characters Rahul and Anita.",
+    "rationale": "Fails C3 real people only constraint.",
+    "constraints_satisfied": [
+      "C1",
+      "C2",
+      "C4",
+      "C5",
+      "C6"
+    ]
+  },
+  {
+    "id": "invalid-15-held-out-uber-anachronism",
+    "split": "held_out_test",
+    "memory_text": "In March 2012, I met Friend A at 6:00 PM near the city railway junction after our 4-hour revision session ended. Because it had begun to drizzle heavily, Friend A opened the uber app on a mobile phone to book a cab back to our hostel. We waited 15 minutes under the concrete bus shelter until the silver hatchback arrived at the curb. The driver loaded our two travel bags into the rear trunk. I pulled the passenger door shut and wiped the raindrops from my spectacles.",
+    "expected_pass": false,
+    "targeted_constraints": [
+      "C1"
+    ],
+    "why_this_is_false": "Mentions Uber and mobile app (forbidden modern tech in 2012 Bangalore context).",
+    "rationale": "Fails C1 era technology constraint.",
+    "constraints_satisfied": [
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6"
+    ]
   }
 ]

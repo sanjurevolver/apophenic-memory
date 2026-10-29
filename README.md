@@ -380,10 +380,11 @@ improvement.
 - [x] **Dynamic Red Pill UI:** Browser interface with side-by-side real/fabricated timeline cards and interactive constraint audit panel
 
 ### Testing & Validation
-- [x] **Deterministic validator suite:** C1–C6 constraint engine, anachronism era validation (`validate_era`), and closing sentence emotion checks (`validate_closing`)
-- [x] **Isolated test suite:** Hermetic unit and integration tests using FastAPI `TestClient` with mocked LLM generation
-- [x] **Automated CI pipeline:** GitHub Actions workflow running `pytest` across all PRs and pushes to main
-- [x] Empirical evaluation of 15 live generations proves the deterministic validators achieve 100% precision/recall, while the self-correction retry loop doubles generation compliance from 25% to 50%.
+- [x] **Deterministic validator suite:** C1-C6 constraint engine, anachronism era validation (alidate_era), and closing sentence emotion checks (alidate_closing)
+- [x] **Automated safeguards test suite:** End-to-end unit tests (	ests/test_safeguards.py) covering permanent UI badges, disclaimer text, Panic Wipe deletion, and schema recovery
+- [x] **Isolated test suite:** Hermetic unit and integration tests with mocked LLM generation
+- [x] **Automated CI pipeline:** GitHub Actions workflow running pytest across all PRs and pushes to main
+- [x] **Reconciled empirical evaluation:** Live CPU evaluation (15 runs cumulative) proves the retry loop doubles compliance from 25.0% to 50.0%, while an independent 30-sample golden dataset audits validator precision and recall across dev and held-out splits (detailed in [EVALUATION.md](EVALUATION.md)).
 
 ### Privacy & Security
 - [x] **Local-only binding:** Server bound strictly to `127.0.0.1` by default to prevent LAN exposure
