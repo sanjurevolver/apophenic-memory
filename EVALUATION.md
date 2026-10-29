@@ -40,55 +40,39 @@ This decision was driven by consumer accessibility and local CPU generation late
   ollama pull llama3.2:3b
   ```
 
-## 6. Empirical Evaluation: 12-Run Live Batch Results with Constraint Retry Loop
+---
 
-To rigorously verify the two-stage pipeline and deterministic validator stack against live local inference, an evaluation batch was executed against `test_data/gap_2012_03.json` using `llama3.2:3b` with up to 3 retries and targeted `CORRECTION REQUIRED` feedback.
+### 6. Live Generation Batch (15 Runs Total)
+We evaluated the pipeline against live Ollama (`llama3.2:3b`) on CPU. The batch was interrupted at Run 4 by an Ollama HTTP 500 error, which led us to implement HTTP retry resilience in `_call_ollama()`. The batch was then successfully resumed.
 
-*Note: This 12-run live batch is cumulative with the previous 3 live generations from initial verification runs, representing a total of 15 live generations across the verification suite.*
+| Metric | Value |
+| :--- | :--- |
+| First-pass compliance | 3/12 (25.0%) |
+| Final compliance (with retry loop) | 6/12 (50.0%) |
+| Average retries | 1.33 |
+| Active median latency | ~151.5s per memory |
+| Most common failure mode | C_CONTRACT / C2 (Word count boundary) |
 
-| Run # | Scene Type | Word Count | Attempts | Status | Failed Constraints | Latency (s) |
-|:-----:|:---|:---:|:---:|:---:|:---|:---:|
-| 1 | `phone_call_on_landline` | 107 / 102 | 1 | `completed` | None | 77.32 |
-| 2 | `walk_home_in_silence` | 139 / 114 | 1 | `completed` | None | 58.02 |
-| 3 | `shared_meal_at_someone_house` | 131 / 105 | 3 | `completed_with_warnings` | C_CLOSING | 122.83 |
-| 4 | `library_at_closing_time` | 138 / 108 | 3 | `completed_with_warnings` | C3, C6 | 168.08 |
-| 5 | `repair_shop_errand` | 114 / 115 | 2 | `completed` | None | 171.47 |
-| 6 | `classroom_after_hours` | 208 / 110 | 3 | `completed_with_warnings` | C_CONTRACT, C2, C3 | 219.02 |
-| 7 | `shared_meal_at_someone_house` | 156 / 100 | 3 | `completed_with_warnings` | C_CONTRACT, C2 | 18,927.58* |
-| 8 | `rooftop_at_dusk` | 113 / 109 | 2 | `completed` | None | 178.89 |
-| 9 | `library_at_closing_time` | 79 / 110 | 3 | `completed_with_warnings` | C_CONTRACT, C2, C3 | 205.24 |
-| 10 | `bus_ride_no_destination` | 118 / 106 | 3 | `completed` | None | 125.15 |
-| 11 | `shared_meal_at_someone_house` | 100 / 105 | 1 | `completed` | None | 67.43 |
-| 12 | `shared_meal_at_someone_house` | 147 / 119 | 3 | `completed_with_warnings` | C_CONTRACT, C2 | 151.49 |
+**Key Observations:**
+- **Retry Loop Doubled Compliance:** 3 runs passed on the first attempt (25.0%), and the targeted retry loop brought final compliance up to 50.0% (Runs 1, 2, 5, 8, 10, 11 passed with 0 errors).
+- **Resilience Verified:** The updated HTTP retry logic in `_call_ollama()` ensured all subsequent calls completed without crashing the batch.
 
-*\*Run 7 elapsed time includes machine sleep/suspension interval.*
+---
 
-### Key Findings & Final Metrics (12-Run Live Sample)
-- **First-pass compliance:** 3/12 (25.0%) — confirms that small models unguided struggle with zero-shot constraint adherence.
-- **Final compliance (with retry loop):** 6/12 (50.0%) — the targeted self-correction retry loop doubled generation compliance from 25.0% to 50.0% without requiring human intervention.
-- **Average retries:** 1.33 retries per generation.
-- **Generation Success Rate:** 12/12 (100.0%) — every run produced a structured, persistent memory with warnings surfaced transparently for any unresolvable constraint boundaries.
-- **Most common failure mode:** `C_CONTRACT` / `C2` (word count upper/lower bounds under strict length limits).
+### 7. Validator Accuracy (Golden Dataset)
 
-## 7. Validator Accuracy (Golden Dataset)
+To establish ground-truth reliability of the deterministic validator suite independent of model generation, the validators were tested against a curated, labeled golden dataset (`test_data/validator_golden_dataset.json`) containing 10 samples (5 known-valid and 5 known-invalid memories targeting specific failure modes: invented names, era anachronisms, emotional endings, forbidden devices, and AI meta-leakage).
 
-To establish ground-truth reliability of the deterministic validator suite independent of model generation, the validators were tested against a curated, labeled golden dataset ([`test_data/validator_golden_dataset.json`](test_data/validator_golden_dataset.json)) containing 10 samples (5 known-valid and 5 known-invalid memories targeting specific failure modes: invented names, era anachronisms, emotional endings, forbidden devices, and AI meta-leakage).
+The evaluation script (`scripts/measure_validator_accuracy.py`) exercises `validate_contract()`, `validate()`, `validate_closing()`, and `validate_era()`.
 
-The evaluation script ([`scripts/measure_validator_accuracy.py`](scripts/measure_validator_accuracy.py)) exercises `validate_contract()`, `validate()`, `validate_closing()`, and `validate_era()`.
-
-### Golden Dataset Results
-
-| Metric | Count / Percentage |
-|:---|:---:|
-| **Total Labeled Samples** | 10 |
-| **True Positives (invalid correctly caught)** | 5 |
-| **True Negatives (valid correctly passed)** | 5 |
-| **False Positives (valid incorrectly rejected)** | 0 |
-| **False Negatives (invalid incorrectly accepted)** | 0 |
-| **Accuracy** | **100.0%** |
-| **Precision** | **100.0%** |
-| **Recall** | **100.0%** |
-| **False Positive Rate** | **0.0%** |
+- **Total Samples:** 10
+- **True Positives:** 5 (correctly failed)
+- **True Negatives:** 5 (correctly passed)
+- **False Positives:** 0
+- **False Negatives:** 0
+- **Accuracy:** 100.0%
+- **Precision:** 100.0%
+- **Recall:** 100.0%
 
 ### Validator Breakdown
 1. **C1 (Era Technology):** Successfully caught forbidden modern technologies (`smartphone`, `whatsapp`) without flagging approved era communication.
